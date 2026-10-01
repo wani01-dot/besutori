@@ -1,3 +1,4 @@
+import Link from "next/link";
 import "./style.css";
 
 export default function Home() {
@@ -12,9 +13,7 @@ export default function Home() {
         <div className="logoArea">
           <div className="crown">♛</div>
 
-          <h1 className="logo">
-            ベストリ
-          </h1>
+          <h1 className="logo">ベストリ</h1>
 
           <div className="logoEnglish">
             B E S T R I
@@ -43,15 +42,21 @@ export default function Home() {
         </div>
 
         <div className="actions">
-          <button className="mainButton createButton">
+          <Link
+            href="/create"
+            className="mainButton createButton"
+          >
             <span className="buttonIcon">＋</span>
             <span>部屋をつくる</span>
-          </button>
+          </Link>
 
-          <button className="mainButton joinButton">
+          <Link
+            href="/join"
+            className="mainButton joinButton"
+          >
             <span className="buttonIcon">⌕</span>
             <span>合言葉で参加</span>
-          </button>
+          </Link>
         </div>
 
         <div className="bottomActions">
