@@ -110,6 +110,18 @@ function getPlayers(room) {
   );
 }
 
+function getOptionColorIndex(
+  options,
+  item
+) {
+  const index =
+    options.indexOf(item);
+
+  return index >= 0
+    ? index
+    : 0;
+}
+
 /* ================================
    SOUND
 ================================ */
@@ -117,7 +129,9 @@ function getPlayers(room) {
 let sharedAudioContext = null;
 
 function getAudioContext() {
-  if (typeof window === "undefined") {
+  if (
+    typeof window === "undefined"
+  ) {
     return null;
   }
 
@@ -179,7 +193,10 @@ function makeTone(
   );
 
   osc.frequency.exponentialRampToValueAtTime(
-    Math.max(1, endFrequency),
+    Math.max(
+      1,
+      endFrequency
+    ),
     end
   );
 
@@ -231,7 +248,9 @@ function playThirdSound(enabled) {
   });
 }
 
-function playSuspenseSound(enabled) {
+function playSuspenseSound(
+  enabled
+) {
   if (!enabled) return;
 
   const ctx = getAudioContext();
@@ -295,11 +314,23 @@ function playDonSound(
   });
 
   const notes = strong
-    ? [784, 988, 1175, 1568]
-    : [659, 831, 1047];
+    ? [
+        784,
+        988,
+        1175,
+        1568,
+      ]
+    : [
+        659,
+        831,
+        1047,
+      ];
 
   notes.forEach(
-    (frequency, index) => {
+    (
+      frequency,
+      index
+    ) => {
       makeTone(ctx, {
         time:
           0.025 +
@@ -307,21 +338,21 @@ function playDonSound(
         frequency,
         endFrequency:
           frequency * 1.02,
-        duration:
-          strong
-            ? 0.28
-            : 0.18,
-        volume:
-          strong
-            ? 0.08
-            : 0.055,
+        duration: strong
+          ? 0.28
+          : 0.18,
+        volume: strong
+          ? 0.08
+          : 0.055,
         type: "triangle",
       });
     }
   );
 }
 
-function playPerfectSound(enabled) {
+function playPerfectSound(
+  enabled
+) {
   if (!enabled) return;
 
   const ctx = getAudioContext();
@@ -329,10 +360,19 @@ function playPerfectSound(enabled) {
 
   unlockAudio();
 
-  [988, 1175, 1568, 2093].forEach(
-    (frequency, index) => {
+  [
+    988,
+    1175,
+    1568,
+    2093,
+  ].forEach(
+    (
+      frequency,
+      index
+    ) => {
       makeTone(ctx, {
-        time: index * 0.055,
+        time:
+          index * 0.055,
         frequency,
         endFrequency:
           frequency * 1.03,
@@ -351,35 +391,59 @@ function playPerfectSound(enabled) {
 export default function Game() {
   const router = useRouter();
 
-  const [localRoom, setLocalRoom] =
-    useState(null);
+  const [
+    localRoom,
+    setLocalRoom,
+  ] = useState(null);
 
-  const [room, setRoom] =
-    useState(null);
+  const [
+    room,
+    setRoom,
+  ] = useState(null);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
 
-  const [topic, setTopic] =
-    useState("");
+  const [
+    topic,
+    setTopic,
+  ] = useState("");
 
-  const [first, setFirst] =
-    useState("");
+  const [
+    first,
+    setFirst,
+  ] = useState("");
 
-  const [second, setSecond] =
-    useState("");
+  const [
+    second,
+    setSecond,
+  ] = useState("");
 
-  const [third, setThird] =
-    useState("");
+  const [
+    third,
+    setThird,
+  ] = useState("");
 
-  const [answerOrder, setAnswerOrder] =
-    useState([null, null, null]);
+  const [
+    answerOrder,
+    setAnswerOrder,
+  ] = useState([
+    null,
+    null,
+    null,
+  ]);
 
-  const [submitting, setSubmitting] =
-    useState(false);
+  const [
+    submitting,
+    setSubmitting,
+  ] = useState(false);
 
-  const [soundEnabled, setSoundEnabled] =
-    useState(true);
+  const [
+    soundEnabled,
+    setSoundEnabled,
+  ] = useState(true);
 
   useEffect(() => {
     const savedSound =
@@ -387,7 +451,9 @@ export default function Game() {
         "besutori-sound"
       );
 
-    if (savedSound === "off") {
+    if (
+      savedSound === "off"
+    ) {
       setSoundEnabled(false);
     }
 
@@ -429,7 +495,8 @@ export default function Game() {
     let parsed;
 
     try {
-      parsed = JSON.parse(saved);
+      parsed =
+        JSON.parse(saved);
     } catch {
       localStorage.removeItem(
         "besutori-room"
@@ -439,7 +506,9 @@ export default function Game() {
       return;
     }
 
-    if (!parsed?.roomCode) {
+    if (
+      !parsed?.roomCode
+    ) {
       setLoading(false);
       return;
     }
@@ -451,59 +520,73 @@ export default function Game() {
       `rooms/${parsed.roomCode}`
     );
 
-    const unsubscribe = onValue(
-      roomRef,
-      (snapshot) => {
-        if (!snapshot.exists()) {
-          setRoom(null);
+    const unsubscribe =
+      onValue(
+        roomRef,
+        (snapshot) => {
+          if (
+            !snapshot.exists()
+          ) {
+            setRoom(null);
+            setLoading(false);
+            return;
+          }
+
+          const nextRoom =
+            snapshot.val();
+
+          setRoom(nextRoom);
           setLoading(false);
-          return;
+
+          if (
+            nextRoom.status ===
+            "waiting"
+          ) {
+            router.replace(
+              "/room"
+            );
+          }
         }
+      );
 
-        const nextRoom =
-          snapshot.val();
-
-        setRoom(nextRoom);
-        setLoading(false);
-
-        if (
-          nextRoom.status ===
-          "waiting"
-        ) {
-          router.replace("/room");
-        }
-      }
-    );
-
-    return () => unsubscribe();
+    return () =>
+      unsubscribe();
   }, [router]);
 
-  const players = useMemo(
-    () => getPlayers(room),
-    [room]
-  );
+  const players =
+    useMemo(
+      () => getPlayers(room),
+      [room]
+    );
 
-  const game = room?.game || {};
+  const game =
+    room?.game || {};
 
   const phase =
-    game.phase || "setting";
+    game.phase ||
+    "setting";
 
-  const presenter = players.find(
-    (player) =>
-      player.id ===
-      game.presenterId
-  );
+  const presenter =
+    players.find(
+      (player) =>
+        player.id ===
+        game.presenterId
+    );
 
   const isPresenter =
-    localRoom?.role === "player" &&
+    localRoom?.role ===
+      "player" &&
     localRoom?.playerId ===
       game.presenterId;
 
   const isSpectator =
-    localRoom?.role === "spectator";
+    localRoom?.role ===
+    "spectator";
 
   const isHost =
-    Boolean(localRoom?.isHost);
+    Boolean(
+      localRoom?.isHost
+    );
 
   const answers =
     game.answers || {};
@@ -516,13 +599,20 @@ export default function Game() {
     );
 
   const answerCount =
-    Object.keys(answers).length;
+    Object.keys(
+      answers
+    ).length;
 
   const allAnswered =
-    answeringPlayers.length === 0 ||
+    answeringPlayers.length ===
+      0 ||
     answeringPlayers.every(
       (player) =>
-        Boolean(answers[player.id])
+        Boolean(
+          answers[
+            player.id
+          ]
+        )
     );
 
   const myAnswer =
@@ -532,23 +622,27 @@ export default function Game() {
         ]
       : null;
 
-  const options = useMemo(() => {
-    if (!game.options) {
-      return [];
-    }
+  const options =
+    useMemo(() => {
+      if (
+        !game.options
+      ) {
+        return [];
+      }
 
-    return Array.isArray(
-      game.options
-    )
-      ? game.options
-      : Object.values(
-          game.options
-        );
-  }, [game.options]);
+      return Array.isArray(
+        game.options
+      )
+        ? game.options
+        : Object.values(
+            game.options
+          );
+    }, [game.options]);
 
   useEffect(() => {
     if (
-      phase !== "answering"
+      phase !==
+      "answering"
     ) {
       return;
     }
@@ -565,13 +659,16 @@ export default function Game() {
   ]);
 
   function toggleSound() {
-    const next = !soundEnabled;
+    const next =
+      !soundEnabled;
 
     setSoundEnabled(next);
 
     localStorage.setItem(
       "besutori-sound",
-      next ? "on" : "off"
+      next
+        ? "on"
+        : "off"
     );
 
     if (next) {
@@ -593,7 +690,8 @@ export default function Game() {
       ];
 
     if (
-      RANDOM_TOPICS.length > 1 &&
+      RANDOM_TOPICS.length >
+        1 &&
       nextTopic === topic
     ) {
       const currentIndex =
@@ -648,12 +746,15 @@ export default function Game() {
     }
 
     const normalized =
-      ranking.map((item) =>
-        item.toLowerCase()
+      ranking.map(
+        (item) =>
+          item.toLowerCase()
       );
 
     if (
-      new Set(normalized).size !== 3
+      new Set(
+        normalized
+      ).size !== 3
     ) {
       alert(
         "1位〜3位には違う内容を入力してください"
@@ -665,7 +766,9 @@ export default function Game() {
 
     try {
       const nextOptions =
-        shuffleArray(ranking);
+        shuffleArray(
+          ranking
+        );
 
       await update(
         ref(
@@ -673,24 +776,37 @@ export default function Game() {
           `rooms/${localRoom.roomCode}/game`
         ),
         {
-          phase: "answering",
-          topic: cleanTopic,
+          phase:
+            "answering",
+
+          topic:
+            cleanTopic,
 
           ranking: {
-            first: ranking[0],
-            second: ranking[1],
-            third: ranking[2],
+            first:
+              ranking[0],
+            second:
+              ranking[1],
+            third:
+              ranking[2],
           },
 
-          options: nextOptions,
+          options:
+            nextOptions,
 
           answers: null,
-          revealed: false,
-          updatedAt: Date.now(),
+
+          revealed:
+            false,
+
+          updatedAt:
+            Date.now(),
         }
       );
     } catch (error) {
-      console.error(error);
+      console.error(
+        error
+      );
 
       alert(
         "出題できませんでした"
@@ -702,7 +818,9 @@ export default function Game() {
 
   async function submitAnswer() {
     const completed =
-      answerOrder.every(Boolean);
+      answerOrder.every(
+        Boolean
+      );
 
     if (
       isPresenter ||
@@ -731,14 +849,17 @@ export default function Game() {
             localRoom.name ||
             "ゲスト",
 
-          order: answerOrder,
+          order:
+            answerOrder,
 
           submittedAt:
             Date.now(),
         }
       );
     } catch (error) {
-      console.error(error);
+      console.error(
+        error
+      );
 
       alert(
         "回答を送信できませんでした"
@@ -766,14 +887,20 @@ export default function Game() {
           `rooms/${localRoom.roomCode}/game`
         ),
         {
-          phase: "result",
-          revealed: true,
+          phase:
+            "result",
+
+          revealed:
+            true,
+
           revealedAt:
             Date.now(),
         }
       );
     } catch (error) {
-      console.error(error);
+      console.error(
+        error
+      );
 
       alert(
         "答え合わせを開始できませんでした"
@@ -784,7 +911,9 @@ export default function Game() {
   function getCorrectCount(
     answer
   ) {
-    if (!answer?.order) {
+    if (
+      !answer?.order
+    ) {
       return 0;
     }
 
@@ -795,15 +924,22 @@ export default function Game() {
     ];
 
     const order =
-      Array.isArray(answer.order)
+      Array.isArray(
+        answer.order
+      )
         ? answer.order
         : Object.values(
             answer.order
           );
 
     return correct.reduce(
-      (count, item, index) =>
-        item === order[index]
+      (
+        count,
+        item,
+        index
+      ) =>
+        item ===
+        order[index]
           ? count + 1
           : count,
       0
@@ -818,7 +954,9 @@ export default function Game() {
       return;
     }
 
-    if (players.length === 0) {
+    if (
+      players.length === 0
+    ) {
       return;
     }
 
@@ -850,7 +988,8 @@ export default function Game() {
               game.round || 1
             ) + 1,
 
-          phase: "setting",
+          phase:
+            "setting",
 
           presenterId:
             nextPresenter.id,
@@ -865,8 +1004,12 @@ export default function Game() {
 
           options: null,
           answers: null,
-          revealed: false,
-          updatedAt: Date.now(),
+
+          revealed:
+            false,
+
+          updatedAt:
+            Date.now(),
         }
       );
 
@@ -881,7 +1024,9 @@ export default function Game() {
         null,
       ]);
     } catch (error) {
-      console.error(error);
+      console.error(
+        error
+      );
 
       alert(
         "次のお題へ進めませんでした"
@@ -897,9 +1042,10 @@ export default function Game() {
       return;
     }
 
-    const ok = window.confirm(
-      "ゲームを終了してルームに戻りますか？"
-    );
+    const ok =
+      window.confirm(
+        "ゲームを終了してルームに戻りますか？"
+      );
 
     if (!ok) {
       return;
@@ -912,14 +1058,19 @@ export default function Game() {
           `rooms/${localRoom.roomCode}`
         ),
         {
-          status: "waiting",
+          status:
+            "waiting",
           game: null,
         }
       );
 
-      router.replace("/room");
+      router.replace(
+        "/room"
+      );
     } catch (error) {
-      console.error(error);
+      console.error(
+        error
+      );
 
       alert(
         "ゲームを終了できませんでした"
@@ -985,7 +1136,9 @@ export default function Game() {
             <button
               type="button"
               className="soundToggleButton"
-              onClick={toggleSound}
+              onClick={
+                toggleSound
+              }
               aria-label={
                 soundEnabled
                   ? "効果音をオフ"
@@ -1006,7 +1159,9 @@ export default function Game() {
                 );
               }}
             >
-              {localRoom.roomCode}
+              {
+                localRoom.roomCode
+              }
             </button>
           </div>
         </header>
@@ -1023,21 +1178,38 @@ export default function Game() {
             </strong>
           </div>
 
-          {phase === "setting" && (
+          {phase ===
+            "setting" && (
             <>
               {isPresenter ? (
                 <PresenterSetting
-                  topic={topic}
-                  setTopic={setTopic}
+                  topic={
+                    topic
+                  }
+                  setTopic={
+                    setTopic
+                  }
                   randomTopic={
                     randomTopic
                   }
-                  first={first}
-                  setFirst={setFirst}
-                  second={second}
-                  setSecond={setSecond}
-                  third={third}
-                  setThird={setThird}
+                  first={
+                    first
+                  }
+                  setFirst={
+                    setFirst
+                  }
+                  second={
+                    second
+                  }
+                  setSecond={
+                    setSecond
+                  }
+                  third={
+                    third
+                  }
+                  setThird={
+                    setThird
+                  }
                   publishQuestion={
                     publishQuestion
                   }
@@ -1058,7 +1230,8 @@ export default function Game() {
             </>
           )}
 
-          {phase === "answering" && (
+          {phase ===
+            "answering" && (
             <>
               <div className="topicCard">
                 <span>
@@ -1096,17 +1269,24 @@ export default function Game() {
                 />
               ) : myAnswer ? (
                 <AnsweredWaiting
-                  answer={myAnswer}
+                  answer={
+                    myAnswer
+                  }
                   answerCount={
                     answerCount
                   }
                   total={
                     answeringPlayers.length
                   }
+                  options={
+                    options
+                  }
                 />
               ) : (
                 <AnswerArea
-                  options={options}
+                  options={
+                    options
+                  }
                   answerOrder={
                     answerOrder
                   }
@@ -1124,14 +1304,19 @@ export default function Game() {
             </>
           )}
 
-          {phase === "result" && (
+          {phase ===
+            "result" && (
             <ResultReveal
               game={game}
-              players={players}
+              players={
+                players
+              }
               presenter={
                 presenter
               }
-              answers={answers}
+              answers={
+                answers
+              }
               getCorrectCount={
                 getCorrectCount
               }
@@ -1147,27 +1332,17 @@ export default function Game() {
             />
           )}
 
-          {isHost &&
-            phase !== "result" && (
-              <button
-                type="button"
-                className="finishGameButton"
-                onClick={finishGame}
-              >
-                ゲームを終了
-              </button>
-            )}
-
-          {isHost &&
-            phase === "result" && (
-              <button
-                type="button"
-                className="finishGameButton"
-                onClick={finishGame}
-              >
-                ゲームを終了
-              </button>
-            )}
+          {isHost && (
+            <button
+              type="button"
+              className="finishGameButton"
+              onClick={
+                finishGame
+              }
+            >
+              ゲームを終了
+            </button>
+          )}
         </div>
       </section>
     </main>
@@ -1205,7 +1380,9 @@ function PresenterSetting({
       <input
         className="textInput gameTopicInput"
         value={topic}
-        onChange={(event) =>
+        onChange={(
+          event
+        ) =>
           setTopic(
             event.target.value
           )
@@ -1217,7 +1394,9 @@ function PresenterSetting({
       <button
         type="button"
         className="randomTopicButton"
-        onClick={randomTopic}
+        onClick={
+          randomTopic
+        }
       >
         <span>🎲</span>
         ランダムで決める
@@ -1230,17 +1409,27 @@ function PresenterSetting({
           </span>
 
           <div>
-            <label>1位</label>
+            <label>
+              1位
+            </label>
 
             <input
-              value={first}
-              onChange={(event) =>
+              value={
+                first
+              }
+              onChange={(
+                event
+              ) =>
                 setFirst(
-                  event.target.value
+                  event
+                    .target
+                    .value
                 )
               }
               placeholder="1番好きなもの"
-              maxLength={30}
+              maxLength={
+                30
+              }
             />
           </div>
         </div>
@@ -1251,17 +1440,27 @@ function PresenterSetting({
           </span>
 
           <div>
-            <label>2位</label>
+            <label>
+              2位
+            </label>
 
             <input
-              value={second}
-              onChange={(event) =>
+              value={
+                second
+              }
+              onChange={(
+                event
+              ) =>
                 setSecond(
-                  event.target.value
+                  event
+                    .target
+                    .value
                 )
               }
               placeholder="2番目"
-              maxLength={30}
+              maxLength={
+                30
+              }
             />
           </div>
         </div>
@@ -1272,17 +1471,27 @@ function PresenterSetting({
           </span>
 
           <div>
-            <label>3位</label>
+            <label>
+              3位
+            </label>
 
             <input
-              value={third}
-              onChange={(event) =>
+              value={
+                third
+              }
+              onChange={(
+                event
+              ) =>
                 setThird(
-                  event.target.value
+                  event
+                    .target
+                    .value
                 )
               }
               placeholder="3番目"
-              maxLength={30}
+              maxLength={
+                30
+              }
             />
           </div>
         </div>
@@ -1291,8 +1500,12 @@ function PresenterSetting({
       <button
         type="button"
         className="publishQuestionButton"
-        onClick={publishQuestion}
-        disabled={submitting}
+        onClick={
+          publishQuestion
+        }
+        disabled={
+          submitting
+        }
       >
         {submitting
           ? "出題中..."
@@ -1303,7 +1516,7 @@ function PresenterSetting({
 }
 
 /* ================================
-   DRAG ANSWER
+   ANSWER
 ================================ */
 
 function AnswerArea({
@@ -1313,23 +1526,35 @@ function AnswerArea({
   submitAnswer,
   submitting,
 }) {
-  const [dragging, setDragging] =
-    useState(null);
+  const [
+    dragging,
+    setDragging,
+  ] = useState(null);
 
-  const [hoverRank, setHoverRank] =
-    useState(null);
+  const [
+    hoverRank,
+    setHoverRank,
+  ] = useState(null);
 
-  const [selected, setSelected] =
-    useState(null);
+  const [
+    selected,
+    setSelected,
+  ] = useState(null);
 
-  const dragRef = useRef(null);
+  const dragRef =
+    useRef(null);
 
   const used =
-    answerOrder.filter(Boolean);
+    answerOrder.filter(
+      Boolean
+    );
 
   const remaining =
     options.filter(
-      (item) => !used.includes(item)
+      (item) =>
+        !used.includes(
+          item
+        )
     );
 
   function placeItem(
@@ -1338,21 +1563,33 @@ function AnswerArea({
   ) {
     setAnswerOrder(
       (current) => {
-        const next = [...current];
+        const next = [
+          ...current,
+        ];
 
         const oldIndex =
-          next.indexOf(item);
+          next.indexOf(
+            item
+          );
 
         const targetItem =
-          next[targetIndex];
+          next[
+            targetIndex
+          ];
 
-        if (oldIndex >= 0) {
-          next[oldIndex] =
-            targetItem || null;
+        if (
+          oldIndex >= 0
+        ) {
+          next[
+            oldIndex
+          ] =
+            targetItem ||
+            null;
         }
 
-        next[targetIndex] =
-          item;
+        next[
+          targetIndex
+        ] = item;
 
         return next;
       }
@@ -1369,29 +1606,22 @@ function AnswerArea({
 
     unlockAudio();
 
-    const sourceIndex =
-      answerOrder.indexOf(item);
-
     const rect =
       event.currentTarget.getBoundingClientRect();
 
     dragRef.current = {
       item,
-      sourceIndex,
-      offsetX:
-        event.clientX -
-        rect.left,
-      offsetY:
-        event.clientY -
-        rect.top,
     };
 
     setDragging({
       item,
       x: event.clientX,
       y: event.clientY,
-      width: rect.width,
-      height: rect.height,
+      colorIndex:
+        getOptionColorIndex(
+          options,
+          item
+        ),
     });
 
     event.currentTarget.setPointerCapture?.(
@@ -1399,8 +1629,12 @@ function AnswerArea({
     );
   }
 
-  function moveDrag(event) {
-    if (!dragRef.current) {
+  function moveDrag(
+    event
+  ) {
+    if (
+      !dragRef.current
+    ) {
       return;
     }
 
@@ -1411,8 +1645,10 @@ function AnswerArea({
         current
           ? {
               ...current,
-              x: event.clientX,
-              y: event.clientY,
+              x:
+                event.clientX,
+              y:
+                event.clientY,
             }
           : current
     );
@@ -1431,7 +1667,8 @@ function AnswerArea({
     if (slot) {
       setHoverRank(
         Number(
-          slot.dataset.rankSlot
+          slot.dataset
+            .rankSlot
         )
       );
     } else {
@@ -1439,8 +1676,12 @@ function AnswerArea({
     }
   }
 
-  function endDrag(event) {
-    if (!dragRef.current) {
+  function endDrag(
+    event
+  ) {
+    if (
+      !dragRef.current
+    ) {
       return;
     }
 
@@ -1462,18 +1703,22 @@ function AnswerArea({
       placeItem(
         item,
         Number(
-          slot.dataset.rankSlot
+          slot.dataset
+            .rankSlot
         )
       );
     }
 
-    dragRef.current = null;
+    dragRef.current =
+      null;
 
     setDragging(null);
     setHoverRank(null);
   }
 
-  function chooseItem(item) {
+  function chooseItem(
+    item
+  ) {
     setSelected(
       selected === item
         ? null
@@ -1481,7 +1726,9 @@ function AnswerArea({
     );
   }
 
-  function chooseSlot(index) {
+  function chooseSlot(
+    index
+  ) {
     if (!selected) {
       return;
     }
@@ -1493,7 +1740,9 @@ function AnswerArea({
   }
 
   const completed =
-    answerOrder.every(Boolean);
+    answerOrder.every(
+      Boolean
+    );
 
   return (
     <div className="gamePanel dragAnswerPanel">
@@ -1513,14 +1762,26 @@ function AnswerArea({
         </span>
 
         <div className="answerChoiceList">
-          {remaining.length > 0 ? (
+          {remaining.length >
+          0 ? (
             remaining.map(
               (item) => (
                 <DraggableAnswerCard
-                  key={item}
-                  item={item}
+                  key={
+                    item
+                  }
+                  item={
+                    item
+                  }
+                  colorIndex={
+                    getOptionColorIndex(
+                      options,
+                      item
+                    )
+                  }
                   selected={
-                    selected === item
+                    selected ===
+                    item
                   }
                   onPointerDown={
                     beginDrag
@@ -1535,7 +1796,9 @@ function AnswerArea({
                     endDrag
                   }
                   onClick={() =>
-                    chooseItem(item)
+                    chooseItem(
+                      item
+                    )
                   }
                 />
               )
@@ -1550,72 +1813,112 @@ function AnswerArea({
 
       <div className="rankDropArea">
         {answerOrder.map(
-          (item, index) => (
-            <div
-              key={index}
-              data-rank-slot={index}
-              className={[
-                "rankDropSlot",
-                `rankDropSlot${index + 1}`,
-                hoverRank === index
-                  ? "dragOver"
-                  : "",
-                item
-                  ? "filled"
-                  : "",
-                selected
-                  ? "tapReady"
-                  : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-              onClick={() =>
-                chooseSlot(index)
-              }
-            >
-              <div className="dropRankBadge">
-                <strong>
-                  {index + 1}
-                </strong>
-                <span>位</span>
-              </div>
+          (
+            item,
+            index
+          ) => {
+            const colorIndex =
+              item
+                ? getOptionColorIndex(
+                    options,
+                    item
+                  )
+                : null;
 
-              {item ? (
-                <DraggableAnswerCard
-                  item={item}
-                  selected={
-                    selected === item
-                  }
-                  placed
-                  onPointerDown={
-                    beginDrag
-                  }
-                  onPointerMove={
-                    moveDrag
-                  }
-                  onPointerUp={
-                    endDrag
-                  }
-                  onPointerCancel={
-                    endDrag
-                  }
-                  onClick={(
-                    event
-                  ) => {
-                    event.stopPropagation();
-                    chooseItem(
-                      item
-                    );
-                  }}
-                />
-              ) : (
-                <div className="dropPlaceholder">
-                  <span>＋</span>
-                  ここに持ってくる
+            return (
+              <div
+                key={
+                  index
+                }
+                data-rank-slot={
+                  index
+                }
+                className={[
+                  "rankDropSlot",
+                  item
+                    ? `slotColor${colorIndex + 1}`
+                    : "",
+                  hoverRank ===
+                  index
+                    ? "dragOver"
+                    : "",
+                  item
+                    ? "filled"
+                    : "",
+                  selected
+                    ? "tapReady"
+                    : "",
+                ]
+                  .filter(
+                    Boolean
+                  )
+                  .join(
+                    " "
+                  )}
+                onClick={() =>
+                  chooseSlot(
+                    index
+                  )
+                }
+              >
+                <div className="dropRankBadge">
+                  <strong>
+                    {index +
+                      1}
+                  </strong>
+
+                  <span>
+                    位
+                  </span>
                 </div>
-              )}
-            </div>
-          )
+
+                {item ? (
+                  <DraggableAnswerCard
+                    item={
+                      item
+                    }
+                    colorIndex={
+                      colorIndex
+                    }
+                    selected={
+                      selected ===
+                      item
+                    }
+                    placed
+                    onPointerDown={
+                      beginDrag
+                    }
+                    onPointerMove={
+                      moveDrag
+                    }
+                    onPointerUp={
+                      endDrag
+                    }
+                    onPointerCancel={
+                      endDrag
+                    }
+                    onClick={(
+                      event
+                    ) => {
+                      event.stopPropagation();
+
+                      chooseItem(
+                        item
+                      );
+                    }}
+                  />
+                ) : (
+                  <div className="dropPlaceholder">
+                    <span>
+                      ＋
+                    </span>
+
+                    ここに持ってくる
+                  </div>
+                )}
+              </div>
+            );
+          }
         )}
       </div>
 
@@ -1628,7 +1931,9 @@ function AnswerArea({
       <button
         type="button"
         className="submitAnswerButton"
-        onClick={submitAnswer}
+        onClick={
+          submitAnswer
+        }
         disabled={
           submitting ||
           !completed
@@ -1643,10 +1948,15 @@ function AnswerArea({
 
       {dragging && (
         <div
-          className="floatingAnswerCard"
+          className={[
+            "floatingAnswerCard",
+            `answerColor${dragging.colorIndex + 1}`,
+          ].join(" ")}
           style={{
-            left: dragging.x,
-            top: dragging.y,
+            left:
+              dragging.x,
+            top:
+              dragging.y,
           }}
         >
           <span className="dragGrip">
@@ -1654,7 +1964,9 @@ function AnswerArea({
           </span>
 
           <strong>
-            {dragging.item}
+            {
+              dragging.item
+            }
           </strong>
         </div>
       )}
@@ -1664,6 +1976,7 @@ function AnswerArea({
 
 function DraggableAnswerCard({
   item,
+  colorIndex = 0,
   selected,
   placed = false,
   onPointerDown,
@@ -1677,6 +1990,7 @@ function DraggableAnswerCard({
       type="button"
       className={[
         "dragAnswerCard",
+        `answerColor${colorIndex + 1}`,
         selected
           ? "selected"
           : "",
@@ -1697,17 +2011,23 @@ function DraggableAnswerCard({
       onPointerMove={
         onPointerMove
       }
-      onPointerUp={onPointerUp}
+      onPointerUp={
+        onPointerUp
+      }
       onPointerCancel={
         onPointerCancel
       }
-      onClick={onClick}
+      onClick={
+        onClick
+      }
     >
       <span className="dragGrip">
         ⋮⋮
       </span>
 
-      <strong>{item}</strong>
+      <strong>
+        {item}
+      </strong>
 
       {!placed && (
         <span className="dragMiniText">
@@ -1735,6 +2055,7 @@ function WaitingCard({
       </div>
 
       <h2>{title}</h2>
+
       <p>{text}</p>
     </div>
   );
@@ -1786,8 +2107,12 @@ function PresenterWaiting({
       <button
         type="button"
         className="revealButton"
-        onClick={revealAnswers}
-        disabled={!allAnswered}
+        onClick={
+          revealAnswers
+        }
+        disabled={
+          !allAnswered
+        }
       >
         {allAnswered
           ? "答え合わせ！"
@@ -1812,7 +2137,8 @@ function SpectatorWaiting({
       </h2>
 
       <p>
-        {answerCount} / {total}人
+        {answerCount} /{" "}
+        {total}人
         が回答しました
       </p>
     </div>
@@ -1823,12 +2149,16 @@ function AnsweredWaiting({
   answer,
   answerCount,
   total,
+  options,
 }) {
   const order =
-    Array.isArray(answer.order)
+    Array.isArray(
+      answer.order
+    )
       ? answer.order
       : Object.values(
-          answer.order || {}
+          answer.order ||
+            {}
         );
 
   return (
@@ -1839,22 +2169,40 @@ function AnsweredWaiting({
 
       <div className="submittedRanking">
         {order.map(
-          (item, index) => (
-            <div key={item}>
-              <span>
-                {index + 1}
-              </span>
+          (
+            item,
+            index
+          ) => {
+            const colorIndex =
+              getOptionColorIndex(
+                options,
+                item
+              );
 
-              <strong>
-                {item}
-              </strong>
-            </div>
-          )
+            return (
+              <div
+                key={
+                  item
+                }
+                className={`submittedColor${colorIndex + 1}`}
+              >
+                <span>
+                  {index +
+                    1}
+                </span>
+
+                <strong>
+                  {item}
+                </strong>
+              </div>
+            );
+          }
         )}
       </div>
 
       <p className="gameHelp">
-        {answerCount} / {total}人
+        {answerCount} /{" "}
+        {total}人
         回答済み
         <br />
         答え合わせを待っています
@@ -1877,8 +2225,12 @@ function ResultReveal({
   nextRound,
   soundEnabled,
 }) {
-  const [stage, setStage] =
-    useState("intro");
+  const [
+    stage,
+    setStage,
+  ] = useState(
+    "intro"
+  );
 
   const playedRef =
     useRef(false);
@@ -1890,17 +2242,23 @@ function ResultReveal({
   ];
 
   useEffect(() => {
-    if (playedRef.current) {
+    if (
+      playedRef.current
+    ) {
       return;
     }
 
-    playedRef.current = true;
+    playedRef.current =
+      true;
 
     const timers = [];
 
     timers.push(
       setTimeout(() => {
-        setStage("third");
+        setStage(
+          "third"
+        );
+
         playThirdSound(
           soundEnabled
         );
@@ -1909,7 +2267,10 @@ function ResultReveal({
 
     timers.push(
       setTimeout(() => {
-        setStage("suspense");
+        setStage(
+          "suspense"
+        );
+
         playSuspenseSound(
           soundEnabled
         );
@@ -1918,7 +2279,10 @@ function ResultReveal({
 
     timers.push(
       setTimeout(() => {
-        setStage("second");
+        setStage(
+          "second"
+        );
+
         playDonSound(
           soundEnabled,
           false
@@ -1928,7 +2292,10 @@ function ResultReveal({
 
     timers.push(
       setTimeout(() => {
-        setStage("firstWait");
+        setStage(
+          "firstWait"
+        );
+
         playSuspenseSound(
           soundEnabled
         );
@@ -1937,7 +2304,10 @@ function ResultReveal({
 
     timers.push(
       setTimeout(() => {
-        setStage("first");
+        setStage(
+          "first"
+        );
+
         playDonSound(
           soundEnabled,
           true
@@ -1947,7 +2317,9 @@ function ResultReveal({
 
     timers.push(
       setTimeout(() => {
-        setStage("results");
+        setStage(
+          "results"
+        );
 
         const hasPerfect =
           Object.values(
@@ -1959,7 +2331,9 @@ function ResultReveal({
               ) === 3
           );
 
-        if (hasPerfect) {
+        if (
+          hasPerfect
+        ) {
           playPerfectSound(
             soundEnabled
           );
@@ -1974,12 +2348,19 @@ function ResultReveal({
     };
   }, []);
 
-  if (stage !== "results") {
+  if (
+    stage !==
+    "results"
+  ) {
     return (
       <RevealStage
         stage={stage}
-        ranking={ranking}
-        topic={game.topic}
+        ranking={
+          ranking
+        }
+        topic={
+          game.topic
+        }
       />
     );
   }
@@ -1987,16 +2368,24 @@ function ResultReveal({
   return (
     <ResultArea
       game={game}
-      players={players}
-      presenter={presenter}
-      answers={answers}
+      players={
+        players
+      }
+      presenter={
+        presenter
+      }
+      answers={
+        answers
+      }
       getCorrectCount={
         getCorrectCount
       }
       isPresenter={
         isPresenter
       }
-      nextRound={nextRound}
+      nextRound={
+        nextRound
+      }
     />
   );
 }
@@ -2024,8 +2413,10 @@ function RevealStage({
     stage === "first";
 
   const isSuspense =
-    stage === "suspense" ||
-    stage === "firstWait";
+    stage ===
+      "suspense" ||
+    stage ===
+      "firstWait";
 
   return (
     <div
@@ -2038,7 +2429,8 @@ function RevealStage({
         {topic}
       </div>
 
-      {stage === "intro" && (
+      {stage ===
+        "intro" && (
         <div className="revealIntro">
           <span>
             RESULT
@@ -2062,7 +2454,9 @@ function RevealStage({
         {showThird && (
           <RevealCard
             rank={3}
-            item={ranking[2]}
+            item={
+              ranking[2]
+            }
             className="revealThird"
           />
         )}
@@ -2070,7 +2464,9 @@ function RevealStage({
         {showSecond && (
           <RevealCard
             rank={2}
-            item={ranking[1]}
+            item={
+              ranking[1]
+            }
             className="revealSecond"
           />
         )}
@@ -2078,7 +2474,9 @@ function RevealStage({
         {showFirst && (
           <RevealCard
             rank={1}
-            item={ranking[0]}
+            item={
+              ranking[0]
+            }
             className="revealFirst"
           />
         )}
@@ -2133,27 +2531,41 @@ function Confetti() {
     >
       {Array.from({
         length: 26,
-      }).map((_, index) => (
-        <span
-          key={index}
-          style={{
-            "--i": index,
-            "--x": `${
-              4 +
-              ((index * 37) %
-                92)
-            }%`,
-            "--delay": `${
-              (index % 7) *
-              0.045
-            }s`,
-            "--rotate": `${
-              (index * 47) %
-              360
-            }deg`,
-          }}
-        />
-      ))}
+      }).map(
+        (
+          _,
+          index
+        ) => (
+          <span
+            key={
+              index
+            }
+            style={{
+              "--i":
+                index,
+
+              "--x": `${
+                4 +
+                ((index *
+                  37) %
+                  92)
+              }%`,
+
+              "--delay": `${
+                (index %
+                  7) *
+                0.045
+              }s`,
+
+              "--rotate": `${
+                (index *
+                  47) %
+                360
+              }deg`,
+            }}
+          />
+        )
+      )}
     </div>
   );
 }
@@ -2202,13 +2614,17 @@ function ResultArea({
 
       <div className="correctRanking">
         {ranking.map(
-          (item, index) => (
+          (
+            item,
+            index
+          ) => (
             <div
               className={`correctRank correctRank${index + 1}`}
               key={`${item}-${index}`}
             >
               <span>
-                {index + 1}
+                {index +
+                  1}
               </span>
 
               <strong>
@@ -2231,9 +2647,13 @@ function ResultArea({
           </div>
         ) : (
           answeringPlayers.map(
-            (player) => {
+            (
+              player
+            ) => {
               const answer =
-                answers[player.id];
+                answers[
+                  player.id
+                ];
 
               const correctCount =
                 getCorrectCount(
@@ -2243,11 +2663,14 @@ function ResultArea({
               return (
                 <div
                   className={
-                    correctCount === 3
+                    correctCount ===
+                    3
                       ? "resultPlayer perfectPlayer"
                       : "resultPlayer"
                   }
-                  key={player.id}
+                  key={
+                    player.id
+                  }
                 >
                   <div>
                     <span className="resultAvatar">
@@ -2259,7 +2682,9 @@ function ResultArea({
                     </span>
 
                     <strong>
-                      {player.name}
+                      {
+                        player.name
+                      }
                     </strong>
                   </div>
 
@@ -2272,7 +2697,9 @@ function ResultArea({
                     }
                   >
                     <strong>
-                      {correctCount}
+                      {
+                        correctCount
+                      }
                       /3
                     </strong>
 
@@ -2294,7 +2721,9 @@ function ResultArea({
         <button
           type="button"
           className="nextRoundButton"
-          onClick={nextRound}
+          onClick={
+            nextRound
+          }
         >
           次のお題へ
         </button>
