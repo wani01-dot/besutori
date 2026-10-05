@@ -122,6 +122,16 @@ function getOptionColorIndex(
     : 0;
 }
 
+function normalizeOrder(order) {
+  if (!order) {
+    return [];
+  }
+
+  return Array.isArray(order)
+    ? order
+    : Object.values(order);
+}
+
 /* ================================
    SOUND
 ================================ */
@@ -924,13 +934,9 @@ export default function Game() {
     ];
 
     const order =
-      Array.isArray(
+      normalizeOrder(
         answer.order
-      )
-        ? answer.order
-        : Object.values(
-            answer.order
-          );
+      );
 
     return correct.reduce(
       (
@@ -1317,6 +1323,9 @@ export default function Game() {
               answers={
                 answers
               }
+              options={
+                options
+              }
               getCorrectCount={
                 getCorrectCount
               }
@@ -1605,9 +1614,6 @@ function AnswerArea({
     event.preventDefault();
 
     unlockAudio();
-
-    const rect =
-      event.currentTarget.getBoundingClientRect();
 
     dragRef.current = {
       item,
@@ -2152,14 +2158,9 @@ function AnsweredWaiting({
   options,
 }) {
   const order =
-    Array.isArray(
+    normalizeOrder(
       answer.order
-    )
-      ? answer.order
-      : Object.values(
-          answer.order ||
-            {}
-        );
+    );
 
   return (
     <div className="gamePanel">
@@ -2182,7 +2183,7 @@ function AnsweredWaiting({
             return (
               <div
                 key={
-                  item
+                  `${item}-${index}`
                 }
                 className={`submittedColor${colorIndex + 1}`}
               >
@@ -2220,6 +2221,7 @@ function ResultReveal({
   players,
   presenter,
   answers,
+  options,
   getCorrectCount,
   isPresenter,
   nextRound,
@@ -2376,6 +2378,9 @@ function ResultReveal({
       }
       answers={
         answers
+      }
+      options={
+        options
       }
       getCorrectCount={
         getCorrectCount
@@ -2579,6 +2584,7 @@ function ResultArea({
   players,
   presenter,
   answers,
+  options,
   getCorrectCount,
   isPresenter,
   nextRound,
@@ -2660,56 +2666,155 @@ function ResultArea({
                   answer
                 );
 
+              const order =
+                normalizeOrder(
+                  answer?.order
+                );
+
               return (
                 <div
-                  className={
+                  className={[
+                    "resultPlayerDetail",
                     correctCount ===
                     3
-                      ? "resultPlayer perfectPlayer"
-                      : "resultPlayer"
-                  }
+                      ? "perfectPlayer"
+                      : "",
+                  ]
+                    .filter(
+                      Boolean
+                    )
+                    .join(
+                      " "
+                    )}
                   key={
                     player.id
                   }
                 >
-                  <div>
-                    <span className="resultAvatar">
-                      {(player.name ||
-                        "?").slice(
-                        0,
-                        1
-                      )}
-                    </span>
-
-                    <strong>
-                      {
-                        player.name
-                      }
-                    </strong>
-                  </div>
-
-                  <div
-                    className={
-                      correctCount ===
-                      3
-                        ? "resultScore perfect"
-                        : "resultScore"
-                    }
-                  >
-                    <strong>
-                      {
-                        correctCount
-                      }
-                      /3
-                    </strong>
-
-                    {correctCount ===
-                      3 && (
-                      <span>
-                        PERFECT!
+                  <div className="resultPlayerHeader">
+                    <div className="resultPlayerIdentity">
+                      <span className="resultAvatar">
+                        {(player.name ||
+                          "?").slice(
+                          0,
+                          1
+                        )}
                       </span>
-                    )}
+
+                      <strong>
+                        {
+                          player.name
+                        }
+                      </strong>
+                    </div>
+
+                    <div
+                      className={
+                        correctCount ===
+                        3
+                          ? "resultScore perfect"
+                          : "resultScore"
+                      }
+                    >
+                      <strong>
+                        {
+                          correctCount
+                        }
+                        /3
+                      </strong>
+
+                      {correctCount ===
+                        3 && (
+                        <span>
+                          PERFECT!
+                        </span>
+                      )}
+                    </div>
                   </div>
+
+                  {answer &&
+                  order.length >
+                    0 ? (
+                    <div className="playerAnswerRanking">
+                      {order.map(
+                        (
+                          item,
+                          index
+                        ) => {
+                          const isCorrect =
+                            ranking[
+                              index
+                            ] ===
+                            item;
+
+                          const colorIndex =
+                            getOptionColorIndex(
+                              options,
+                              item
+                            );
+
+                          return (
+                            <div
+                              key={`${player.id}-${item}-${index}`}
+                              className={[
+                                "playerAnswerRow",
+                                `playerAnswerColor${colorIndex + 1}`,
+                                isCorrect
+                                  ? "answerCorrect"
+                                  : "answerWrong",
+                              ]
+                                .filter(
+                                  Boolean
+                                )
+                                .join(
+                                  " "
+                                )}
+                            >
+                              <div className="playerAnswerRank">
+                                <strong>
+                                  {index +
+                                    1}
+                                </strong>
+
+                                <span>
+                                  位
+                                </span>
+                              </div>
+
+                              <strong className="playerAnswerItem">
+                                {
+                                  item
+                                }
+                              </strong>
+
+                              <span
+                                className={[
+                                  "playerAnswerJudge",
+                                  isCorrect
+                                    ? "correctJudge"
+                                    : "wrongJudge",
+                                ].join(
+                                  " "
+                                )}
+                                aria-label={
+                                  isCorrect
+                                    ? "正解"
+                                    : "不正解"
+                                }
+                              >
+                                {isCorrect
+                                  ? "✓"
+                                  : "×"}
+                              </span>
+                            </div>
+                          );
+                        }
+                      )}
+                    </div>
+                  ) : (
+                    <div className="playerNoAnswer">
+                      回答データがありません
+                    </div>
+                  )}
                 </div>
               );
             }
