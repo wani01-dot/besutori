@@ -3422,3 +3422,286 @@ a {
       0.01ms !important;
   }
 }
+/* ================================
+   HOW TO PAGE
+================================ */
+
+.howToScreen {
+  background:
+    radial-gradient(
+      circle at 50% 15%,
+      rgba(255, 216, 74, 0.13),
+      transparent 27%
+    ),
+    linear-gradient(
+      180deg,
+      #fffdf7 0%,
+      #fffaf0 100%
+    );
+}
+
+.howToPageHeader {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+
+  min-height: 78px;
+
+  padding:
+    calc(env(safe-area-inset-top) + 12px)
+    18px
+    12px;
+
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 10px;
+
+  border-bottom: 1px solid #eee7d9;
+
+  background: rgba(255, 253, 247, 0.94);
+
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.howToPageHeader > div:nth-child(2) {
+  text-align: center;
+}
+
+.howToPageEnglish {
+  display: block;
+
+  margin-bottom: 1px;
+
+  color: #188cf5;
+
+  font-size: 8px;
+  font-weight: 1000;
+  letter-spacing: 0.16em;
+}
+
+.howToPageHeader h1 {
+  margin: 0;
+
+  color: #172235;
+
+  font-size: 19px;
+  font-weight: 1000;
+}
+
+.howToBackButton {
+  width: 42px;
+  height: 42px;
+
+  border: 1.5px solid #ddd8ce;
+  border-radius: 13px;
+
+  display: grid;
+  place-items: center;
+
+  background: white;
+  color: #172235;
+
+  font-size: 34px;
+  font-weight: 500;
+  line-height: 1;
+
+  box-shadow:
+    0 3px 8px rgba(23, 34, 53, 0.04);
+}
+
+.howToHeaderSpace {
+  width: 42px;
+}
+
+.howToPageContent {
+  width: 100%;
+
+  padding:
+    27px
+    20px
+    calc(env(safe-area-inset-bottom) + 35px);
+}
+
+.howToIntro {
+  text-align: center;
+
+  margin-bottom: 28px;
+}
+
+.howToIntroCrown {
+  width: 52px;
+  height: 52px;
+
+  margin: 0 auto 10px;
+
+  border-radius: 16px;
+
+  display: grid;
+  place-items: center;
+
+  background: #fff2ae;
+  color: #e5a700;
+
+  font-size: 29px;
+
+  transform: rotate(-3deg);
+}
+
+.howToIntro h2 {
+  margin: 0;
+
+  color: #172235;
+
+  font-size: 27px;
+  font-weight: 1000;
+  line-height: 1.3;
+  letter-spacing: -0.04em;
+}
+
+.howToIntro p {
+  margin: 11px 0 0;
+
+  color: #747d89;
+
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.75;
+}
+
+.howToPageSteps {
+  display: grid;
+  gap: 11px;
+}
+
+.howToPageSteps .howToStep {
+  min-height: 92px;
+
+  padding: 13px;
+
+  border: 1.5px solid #e2ded5;
+  border-radius: 17px;
+
+  display: grid;
+  grid-template-columns: 45px 1fr;
+  align-items: flex-start;
+  gap: 12px;
+
+  background: white;
+
+  box-shadow:
+    0 4px 13px rgba(23, 34, 53, 0.035);
+}
+
+.howToPageSteps .howToNumber {
+  width: 43px;
+  height: 43px;
+
+  border-radius: 13px;
+
+  display: grid;
+  place-items: center;
+
+  font-size: 20px;
+  font-weight: 1000;
+}
+
+.howToStep1 .howToNumber {
+  background: #ffd84a;
+  color: #654700;
+}
+
+.howToStep2 .howToNumber {
+  background: #79ccf5;
+  color: #07547d;
+}
+
+.howToStep3 .howToNumber {
+  background: #f58d80;
+  color: #713129;
+}
+
+.howToStep4 .howToNumber {
+  background: #98dda9;
+  color: #236338;
+}
+
+.howToStepText h3 {
+  margin: 1px 0 5px;
+
+  color: #172235;
+
+  font-size: 14px;
+  font-weight: 1000;
+  line-height: 1.4;
+}
+
+.howToStepText p {
+  margin: 0;
+
+  color: #747d89;
+
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.65;
+}
+
+.howToPageMessage {
+  margin-top: 17px;
+  padding: 16px;
+
+  border: 1.5px dashed #d5d0c4;
+  border-radius: 16px;
+
+  background: rgba(255, 255, 255, 0.65);
+
+  color: #69717d;
+
+  text-align: center;
+
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.howToPageMessage strong {
+  color: #172235;
+  font-weight: 1000;
+}
+
+.howToHomeButton {
+  width: 100%;
+  min-height: 58px;
+
+  margin-top: 19px;
+
+  border: 2px solid #d89900;
+  border-radius: 15px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background:
+    linear-gradient(
+      180deg,
+      #ffda43,
+      #ffc21c
+    );
+
+  color: #172235;
+
+  font-size: 15px;
+  font-weight: 1000;
+
+  box-shadow:
+    0 5px 0 rgba(183, 123, 0, 0.14);
+}
+
+.howToHomeButton:active {
+  transform: translateY(2px);
+
+  box-shadow:
+    0 3px 0 rgba(183, 123, 0, 0.14);
+}
