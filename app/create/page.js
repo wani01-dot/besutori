@@ -3,6 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import {
+  get,
+  ref,
+  set,
+} from "firebase/database";
+import { db } from "../../lib/firebase";
 import "../style.css";
 
 export default function CreateRoom() {
@@ -12,8 +18,10 @@ export default function CreateRoom() {
   const [allowSpectators, setAllowSpectators] =
     useState(true);
   const [hostName, setHostName] = useState("");
+  const [isCreating, setIsCreating] =
+    useState(false);
 
-  function createRoom() {
+  async function createRoom() {
     const cleanName = hostName.trim();
 
     if (!cleanName) {
@@ -21,24 +29,77 @@ export default function CreateRoom() {
       return;
     }
 
-    const roomCode = createRoomCode();
+    if (isCreating) {
+      return;
+    }
 
-    localStorage.setItem(
-      "besutori-room",
-      JSON.stringify({
+    setIsCreating(true);
+
+    try {
+      const roomCode =
+        await createUniqueRoomCode();
+
+      const playerId = createPlayerId();
+
+      const roomData = {
         roomCode,
         maxPlayers,
         allowSpectators,
-        hostName: cleanName,
-        role: "player",
-        isHost: true,
-      })
-    );
 
-    router.push("/room");
+        status: "waiting",
+
+        hostId: playerId,
+
+        createdAt: Date.now(),
+
+        players: {
+          [playerId]: {
+            id: playerId,
+            name: cleanName,
+            role: "player",
+            isHost: true,
+            joinedAt: Date.now(),
+          },
+        },
+
+        spectators: {},
+      };
+
+      await set(
+        ref(db, `rooms/${roomCode}`),
+        roomData
+      );
+
+      localStorage.setItem(
+        "besutori-room",
+        JSON.stringify({
+          roomCode,
+          maxPlayers,
+          allowSpectators,
+          hostName: cleanName,
+          playerName: cleanName,
+          playerId,
+          role: "player",
+          isHost: true,
+        })
+      );
+
+      router.push("/room");
+    } catch (error) {
+      console.error(
+        "部屋の作成に失敗しました:",
+        error
+      );
+
+      alert(
+        "部屋を作成できませんでした。もう一度お試しください。"
+      );
+
+      setIsCreating(false);
+    }
   }
 
-  function createRoomCode() {
+  async function createUniqueRoomCode() {
     const words = [
       "PIZZA",
       "MANGO",
@@ -52,9 +113,46 @@ export default function CreateRoom() {
       "KIRIN",
     ];
 
-    return words[
-      Math.floor(Math.random() * words.length)
-    ];
+    /*
+      同じ合言葉の部屋がすでに存在した場合は、
+      別の合言葉を探します。
+    */
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const roomCode =
+        words[
+          Math.floor(
+            Math.random() * words.length
+          )
+        ];
+
+      const snapshot = await get(
+        ref(db, `rooms/${roomCode}`)
+      );
+
+      if (!snapshot.exists()) {
+        return roomCode;
+      }
+    }
+
+    /*
+      10種類すべて使用中などの場合の予備コード。
+    */
+    return `ROOM${Math.floor(
+      1000 + Math.random() * 9000
+    )}`;
+  }
+
+  function createPlayerId() {
+    if (
+      typeof crypto !== "undefined" &&
+      typeof crypto.randomUUID === "function"
+    ) {
+      return crypto.randomUUID();
+    }
+
+    return `${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2, 10)}`;
   }
 
   return (
@@ -85,10 +183,13 @@ export default function CreateRoom() {
               type="text"
               value={hostName}
               onChange={(event) =>
-                setHostName(event.target.value)
+                setHostName(
+                  event.target.value
+                )
               }
               placeholder="名前を入力"
               maxLength={12}
+              disabled={isCreating}
             />
           </div>
 
@@ -115,6 +216,7 @@ export default function CreateRoom() {
                     onClick={() =>
                       setMaxPlayers(number)
                     }
+                    disabled={isCreating}
                   >
                     {number}人
                   </button>
@@ -149,6 +251,7 @@ export default function CreateRoom() {
                 )
               }
               aria-label="観覧を許可"
+              disabled={isCreating}
             >
               <span />
             </button>
@@ -158,8 +261,11 @@ export default function CreateRoom() {
             type="button"
             className="createRoomButton"
             onClick={createRoom}
+            disabled={isCreating}
           >
-            部屋をつくる
+            {isCreating
+              ? "部屋を作成中..."
+              : "部屋をつくる"}
           </button>
         </div>
       </section>
