@@ -1,35 +1,188 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
+import {
+  onValue,
+  ref,
+  update,
+} from "firebase/database";
+import { db } from "../../lib/firebase";
 import "../style.css";
 
 export default function Room() {
-  const [room, setRoom] = useState(null);
+  const [localRoom, setLocalRoom] =
+    useState(null);
+
+  const [firebaseRoom, setFirebaseRoom] =
+    useState(null);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [roomMissing, setRoomMissing] =
+    useState(false);
 
   useEffect(() => {
     const saved =
-      localStorage.getItem("besutori-room");
+      localStorage.getItem(
+        "besutori-room"
+      );
 
     if (!saved) {
+      setLoading(false);
+      setRoomMissing(true);
       return;
     }
 
+    let parsed;
+
     try {
-      setRoom(JSON.parse(saved));
+      parsed = JSON.parse(saved);
     } catch {
       localStorage.removeItem(
         "besutori-room"
       );
+
+      setLoading(false);
+      setRoomMissing(true);
+      return;
     }
+
+    if (!parsed?.roomCode) {
+      setLoading(false);
+      setRoomMissing(true);
+      return;
+    }
+
+    setLocalRoom(parsed);
+
+    const roomRef = ref(
+      db,
+      `rooms/${parsed.roomCode}`
+    );
+
+    const unsubscribe = onValue(
+      roomRef,
+      (snapshot) => {
+        if (!snapshot.exists()) {
+          setFirebaseRoom(null);
+          setRoomMissing(true);
+          setLoading(false);
+          return;
+        }
+
+        setFirebaseRoom(
+          snapshot.val()
+        );
+
+        setRoomMissing(false);
+        setLoading(false);
+      },
+      (error) => {
+        console.error(
+          "部屋の取得に失敗しました:",
+          error
+        );
+
+        setRoomMissing(true);
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
-  if (!room) {
+  async function startGame() {
+    if (
+      !localRoom?.isHost ||
+      !localRoom?.roomCode
+    ) {
+      return;
+    }
+
+    try {
+      await update(
+        ref(
+          db,
+          `rooms/${localRoom.roomCode}`
+        ),
+        {
+          status: "playing",
+          startedAt: Date.now(),
+        }
+      );
+
+      /*
+        次の工程で、
+        実際のゲーム画面への移動を追加する。
+      */
+      alert(
+        "ゲーム開始をFirebaseに送信しました"
+      );
+    } catch (error) {
+      console.error(
+        "ゲーム開始に失敗しました:",
+        error
+      );
+
+      alert(
+        "ゲームを開始できませんでした"
+      );
+    }
+  }
+
+  async function copyRoomCode() {
+    if (!localRoom?.roomCode) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(
+        localRoom.roomCode
+      );
+
+      alert(
+        "ルームコードをコピーしました"
+      );
+    } catch {
+      alert(
+        `ルームコード：${localRoom.roomCode}`
+      );
+    }
+  }
+
+  if (loading) {
     return (
       <main className="app">
         <section className="screen">
           <div className="emptyRoom">
-            <h1>部屋が見つかりません</h1>
+            <h1>
+              部屋を読み込んでいます
+            </h1>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (
+    roomMissing ||
+    !localRoom ||
+    !firebaseRoom
+  ) {
+    return (
+      <main className="app">
+        <section className="screen">
+          <div className="emptyRoom">
+            <h1>
+              部屋が見つかりません
+            </h1>
 
             <Link
               href="/"
@@ -43,8 +196,20 @@ export default function Room() {
     );
   }
 
-  const displayName =
-    room.hostName || room.name || "ゲスト";
+  const players = Object.values(
+    firebaseRoom.players || {}
+  );
+
+  const spectators = Object.values(
+    firebaseRoom.spectators || {}
+  );
+
+  const maxPlayers =
+    firebaseRoom.maxPlayers || 6;
+
+  const allowSpectators =
+    firebaseRoom.allowSpectators ??
+    false;
 
   return (
     <main className="app">
@@ -71,18 +236,14 @@ export default function Room() {
               </span>
 
               <strong>
-                {room.roomCode}
+                {localRoom.roomCode}
               </strong>
             </div>
 
             <button
               type="button"
               className="copyButton"
-              onClick={() => {
-                navigator.clipboard?.writeText(
-                  room.roomCode
-                );
-              }}
+              onClick={copyRoomCode}
             >
               コピー
             </button>
@@ -90,64 +251,118 @@ export default function Room() {
 
           <div className="memberSection">
             <div className="memberHeading">
-              <h2>
-                参加者
-              </h2>
+              <h2>参加者</h2>
 
               <span>
-                1 / {room.maxPlayers || 6}
+                {players.length} /{" "}
+                {maxPlayers}
               </span>
             </div>
 
             <div className="memberList">
-              <div className="member">
-                <div className="avatar hostAvatar">
-                  {displayName.slice(0, 1)}
+              {players.map((player) => {
+                const name =
+                  player.name ||
+                  "ゲスト";
+
+                return (
+                  <div
+                    className="member"
+                    key={player.id}
+                  >
+                    <div
+                      className={
+                        player.isHost
+                          ? "avatar hostAvatar"
+                          : "avatar"
+                      }
+                    >
+                      {name
+                        .slice(0, 1)
+                        .toUpperCase()}
+                    </div>
+
+                    <div className="memberName">
+                      <strong>
+                        {name}
+                      </strong>
+
+                      {player.isHost && (
+                        <span className="hostBadge">
+                          ホスト
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {players.length <
+                maxPlayers && (
+                <div className="member waiting">
+                  <div className="avatar">
+                    ?
+                  </div>
+
+                  <span>
+                    参加者を待っています
+                  </span>
                 </div>
-
-                <div className="memberName">
-                  <strong>
-                    {displayName}
-                  </strong>
-
-                  {room.isHost && (
-                    <span className="hostBadge">
-                      ホスト
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="member waiting">
-                <div className="avatar">
-                  ?
-                </div>
-
-                <span>
-                  参加者を待っています
-                </span>
-              </div>
+              )}
             </div>
           </div>
 
-          {room.allowSpectators && (
+          {allowSpectators && (
             <div className="memberSection spectatorSection">
               <div className="memberHeading">
-                <h2>
-                  観覧者
-                </h2>
+                <h2>観覧者</h2>
 
-                <span>0人</span>
+                <span>
+                  {spectators.length}人
+                </span>
               </div>
 
-              <div className="spectatorEmpty">
-                まだ観覧者はいません
-              </div>
+              {spectators.length === 0 ? (
+                <div className="spectatorEmpty">
+                  まだ観覧者はいません
+                </div>
+              ) : (
+                <div className="memberList">
+                  {spectators.map(
+                    (spectator) => {
+                      const name =
+                        spectator.name ||
+                        "ゲスト";
+
+                      return (
+                        <div
+                          className="member"
+                          key={
+                            spectator.id
+                          }
+                        >
+                          <div className="avatar">
+                            {name
+                              .slice(0, 1)
+                              .toUpperCase()}
+                          </div>
+
+                          <div className="memberName">
+                            <strong>
+                              {name}
+                            </strong>
+                          </div>
+                        </div>
+                      );
+                    }
+                  )}
+                </div>
+              )}
             </div>
           )}
 
           <div className="roomBottom">
-            {room.isHost ? (
+            {localRoom.isHost ? (
               <>
                 <p className="waitingText">
                   参加者が集まったら
@@ -157,11 +372,7 @@ export default function Room() {
                 <button
                   type="button"
                   className="startGameButton"
-                  onClick={() =>
-                    alert(
-                      "次のステップでゲーム画面につなげます"
-                    )
-                  }
+                  onClick={startGame}
                 >
                   ゲームを開始
                 </button>
@@ -170,11 +381,15 @@ export default function Room() {
               <>
                 <div className="waitingPulse">
                   <span />
-                  ホストの開始を待っています
+                  {firebaseRoom.status ===
+                  "playing"
+                    ? "ゲームが開始されました"
+                    : "ホストの開始を待っています"}
                 </div>
 
                 <div className="roleCard">
-                  {room.role === "spectator"
+                  {localRoom.role ===
+                  "spectator"
                     ? "👀 観覧モード"
                     : "🎮 回答者として参加"}
                 </div>
