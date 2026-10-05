@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   useEffect,
   useState,
@@ -14,6 +15,8 @@ import { db } from "../../lib/firebase";
 import "../style.css";
 
 export default function Room() {
+  const router = useRouter();
+
   const [localRoom, setLocalRoom] =
     useState(null);
 
@@ -24,6 +27,9 @@ export default function Room() {
     useState(true);
 
   const [roomMissing, setRoomMissing] =
+    useState(false);
+
+  const [isStarting, setIsStarting] =
     useState(false);
 
   useEffect(() => {
@@ -75,12 +81,27 @@ export default function Room() {
           return;
         }
 
-        setFirebaseRoom(
-          snapshot.val()
-        );
+        const roomData =
+          snapshot.val();
+
+        setFirebaseRoom(roomData);
 
         setRoomMissing(false);
         setLoading(false);
+
+        /*
+          ホストがゲームを開始すると
+          Firebaseのstatusがplayingになる。
+
+          それを全端末が検知して
+          /game に移動する。
+        */
+        if (
+          roomData.status ===
+          "playing"
+        ) {
+          router.replace("/game");
+        }
       },
       (error) => {
         console.error(
@@ -96,15 +117,22 @@ export default function Room() {
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [router]);
 
   async function startGame() {
     if (
       !localRoom?.isHost ||
-      !localRoom?.roomCode
+      !localRoom?.roomCode ||
+      isStarting
     ) {
       return;
     }
+
+    /*
+      ホストを最初の出題者にする。
+      roundは第1問。
+    */
+    setIsStarting(true);
 
     try {
       await update(
@@ -114,17 +142,40 @@ export default function Room() {
         ),
         {
           status: "playing",
+
           startedAt: Date.now(),
+
+          game: {
+            round: 1,
+
+            phase: "setting",
+
+            presenterId:
+              localRoom.playerId,
+
+            topic: "",
+
+            ranking: {
+              first: "",
+              second: "",
+              third: "",
+            },
+
+            answers: {},
+
+            revealed: false,
+
+            updatedAt:
+              Date.now(),
+          },
         }
       );
 
       /*
-        次の工程で、
-        実際のゲーム画面への移動を追加する。
+        onValueがstatusの変更を検知して
+        ホストも回答者も観覧者も
+        /gameへ移動する。
       */
-      alert(
-        "ゲーム開始をFirebaseに送信しました"
-      );
     } catch (error) {
       console.error(
         "ゲーム開始に失敗しました:",
@@ -134,6 +185,8 @@ export default function Room() {
       alert(
         "ゲームを開始できませんでした"
       );
+
+      setIsStarting(false);
     }
   }
 
@@ -260,42 +313,44 @@ export default function Room() {
             </div>
 
             <div className="memberList">
-              {players.map((player) => {
-                const name =
-                  player.name ||
-                  "ゲスト";
+              {players.map(
+                (player) => {
+                  const name =
+                    player.name ||
+                    "ゲスト";
 
-                return (
-                  <div
-                    className="member"
-                    key={player.id}
-                  >
+                  return (
                     <div
-                      className={
-                        player.isHost
-                          ? "avatar hostAvatar"
-                          : "avatar"
-                      }
+                      className="member"
+                      key={player.id}
                     >
-                      {name
-                        .slice(0, 1)
-                        .toUpperCase()}
-                    </div>
+                      <div
+                        className={
+                          player.isHost
+                            ? "avatar hostAvatar"
+                            : "avatar"
+                        }
+                      >
+                        {name
+                          .slice(0, 1)
+                          .toUpperCase()}
+                      </div>
 
-                    <div className="memberName">
-                      <strong>
-                        {name}
-                      </strong>
+                      <div className="memberName">
+                        <strong>
+                          {name}
+                        </strong>
 
-                      {player.isHost && (
-                        <span className="hostBadge">
-                          ホスト
-                        </span>
-                      )}
+                        {player.isHost && (
+                          <span className="hostBadge">
+                            ホスト
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                }
+              )}
 
               {players.length <
                 maxPlayers && (
@@ -322,7 +377,8 @@ export default function Room() {
                 </span>
               </div>
 
-              {spectators.length === 0 ? (
+              {spectators.length ===
+              0 ? (
                 <div className="spectatorEmpty">
                   まだ観覧者はいません
                 </div>
@@ -343,7 +399,10 @@ export default function Room() {
                         >
                           <div className="avatar">
                             {name
-                              .slice(0, 1)
+                              .slice(
+                                0,
+                                1
+                              )
                               .toUpperCase()}
                           </div>
 
@@ -373,18 +432,21 @@ export default function Room() {
                   type="button"
                   className="startGameButton"
                   onClick={startGame}
+                  disabled={
+                    isStarting
+                  }
                 >
-                  ゲームを開始
+                  {isStarting
+                    ? "ゲームを開始中..."
+                    : "ゲームを開始"}
                 </button>
               </>
             ) : (
               <>
                 <div className="waitingPulse">
                   <span />
-                  {firebaseRoom.status ===
-                  "playing"
-                    ? "ゲームが開始されました"
-                    : "ホストの開始を待っています"}
+                  ホストの開始を
+                  待っています
                 </div>
 
                 <div className="roleCard">
