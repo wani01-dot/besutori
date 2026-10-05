@@ -3117,3 +3117,308 @@ a {
       1 !important;
   }
 }
+/* ================================
+   HOME HOW TO
+================================ */
+
+.singleBottomAction {
+  grid-template-columns: 1fr;
+}
+
+.howToButton {
+  width: 100%;
+}
+
+.howToOverlay {
+  position: fixed;
+  z-index: 9999;
+
+  inset: 0;
+
+  padding:
+    calc(env(safe-area-inset-top) + 18px)
+    16px
+    calc(env(safe-area-inset-bottom) + 18px);
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+
+  background:
+    rgba(16, 27, 42, 0.52);
+
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+
+  animation:
+    howToOverlayIn
+    0.2s ease-out;
+}
+
+.howToModal {
+  width: 100%;
+  max-width: 398px;
+  max-height: 88dvh;
+
+  padding: 22px 18px 18px;
+
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  border: 2px solid #172235;
+  border-radius: 25px;
+
+  background: #fffdf7;
+
+  box-shadow:
+    0 18px 50px rgba(16, 27, 42, 0.28);
+
+  animation:
+    howToModalIn
+    0.32s
+    cubic-bezier(
+      0.18,
+      0.89,
+      0.32,
+      1.15
+    );
+}
+
+.howToHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 15px;
+
+  margin-bottom: 19px;
+}
+
+.howToMiniTitle {
+  display: block;
+
+  margin-bottom: 3px;
+
+  color: #188cf5;
+
+  font-size: 9px;
+  font-weight: 1000;
+  letter-spacing: 0.16em;
+}
+
+.howToHeader h2 {
+  margin: 0;
+
+  color: #172235;
+
+  font-size: 27px;
+  font-weight: 1000;
+  letter-spacing: -0.04em;
+}
+
+.howToClose {
+  flex: 0 0 auto;
+
+  width: 38px;
+  height: 38px;
+
+  padding: 0;
+
+  border: 1.5px solid #dedbd4;
+  border-radius: 12px;
+
+  display: grid;
+  place-items: center;
+
+  background: white;
+  color: #69717d;
+
+  font-size: 25px;
+  line-height: 1;
+}
+
+.howToSteps {
+  display: grid;
+  gap: 10px;
+}
+
+.howToStep {
+  min-height: 82px;
+
+  padding: 12px;
+
+  border: 1.5px solid #e2ded5;
+  border-radius: 16px;
+
+  display: grid;
+  grid-template-columns: 43px 1fr;
+  align-items: flex-start;
+  gap: 11px;
+
+  background: white;
+}
+
+.howToNumber {
+  width: 41px;
+  height: 41px;
+
+  border-radius: 13px;
+
+  display: grid;
+  place-items: center;
+
+  color: #172235;
+
+  font-size: 19px;
+  font-weight: 1000;
+}
+
+.howToStep1 .howToNumber {
+  background: #ffd84a;
+  color: #654700;
+}
+
+.howToStep2 .howToNumber {
+  background: #79ccf5;
+  color: #07547d;
+}
+
+.howToStep3 .howToNumber {
+  background: #f58d80;
+  color: #713129;
+}
+
+.howToStep4 .howToNumber {
+  background: #98dda9;
+  color: #236338;
+}
+
+.howToStepText {
+  min-width: 0;
+}
+
+.howToStepText h3 {
+  margin: 1px 0 5px;
+
+  color: #172235;
+
+  font-size: 14px;
+  font-weight: 1000;
+  line-height: 1.4;
+}
+
+.howToStepText p {
+  margin: 0;
+
+  color: #747d89;
+
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.65;
+}
+
+.howToMessage {
+  margin-top: 14px;
+  padding: 13px 14px;
+
+  border-radius: 14px;
+
+  background: #f2f0ea;
+  color: #69717d;
+
+  text-align: center;
+
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.65;
+}
+
+.howToMessage strong {
+  color: #172235;
+  font-weight: 1000;
+}
+
+.howToOkButton {
+  width: 100%;
+  min-height: 54px;
+
+  margin-top: 14px;
+
+  border: 2px solid #d89900;
+  border-radius: 14px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #ffda43,
+      #ffc21c
+    );
+
+  color: #172235;
+
+  font-size: 15px;
+  font-weight: 1000;
+
+  box-shadow:
+    0 4px 0 rgba(183, 123, 0, 0.15);
+}
+
+.howToOkButton:active {
+  transform: translateY(2px);
+
+  box-shadow:
+    0 2px 0 rgba(183, 123, 0, 0.15);
+}
+
+@keyframes howToOverlayIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes howToModalIn {
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(35px)
+      scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
+@media (max-height: 700px) {
+  .howToModal {
+    max-height: 92dvh;
+  }
+
+  .howToStep {
+    min-height: 72px;
+    padding: 10px;
+  }
+
+  .howToSteps {
+    gap: 8px;
+  }
+}
+
+@media (
+  prefers-reduced-motion:
+    reduce
+) {
+  .howToOverlay,
+  .howToModal {
+    animation-duration:
+      0.01ms !important;
+  }
+}
