@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
@@ -109,6 +110,244 @@ function getPlayers(room) {
   );
 }
 
+/* ================================
+   SOUND
+================================ */
+
+let sharedAudioContext = null;
+
+function getAudioContext() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const AudioContext =
+    window.AudioContext ||
+    window.webkitAudioContext;
+
+  if (!AudioContext) {
+    return null;
+  }
+
+  if (!sharedAudioContext) {
+    sharedAudioContext =
+      new AudioContext();
+  }
+
+  return sharedAudioContext;
+}
+
+function unlockAudio() {
+  const ctx = getAudioContext();
+
+  if (
+    ctx &&
+    ctx.state === "suspended"
+  ) {
+    ctx.resume().catch(() => {});
+  }
+}
+
+function makeTone(
+  ctx,
+  {
+    time = 0,
+    frequency = 440,
+    endFrequency = frequency,
+    duration = 0.15,
+    volume = 0.1,
+    type = "sine",
+  }
+) {
+  const osc =
+    ctx.createOscillator();
+
+  const gain =
+    ctx.createGain();
+
+  const start =
+    ctx.currentTime + time;
+
+  const end =
+    start + duration;
+
+  osc.type = type;
+
+  osc.frequency.setValueAtTime(
+    frequency,
+    start
+  );
+
+  osc.frequency.exponentialRampToValueAtTime(
+    Math.max(1, endFrequency),
+    end
+  );
+
+  gain.gain.setValueAtTime(
+    0.0001,
+    start
+  );
+
+  gain.gain.exponentialRampToValueAtTime(
+    volume,
+    start + 0.008
+  );
+
+  gain.gain.exponentialRampToValueAtTime(
+    0.0001,
+    end
+  );
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+
+  osc.start(start);
+  osc.stop(end + 0.03);
+}
+
+function playThirdSound(enabled) {
+  if (!enabled) return;
+
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  unlockAudio();
+
+  makeTone(ctx, {
+    frequency: 620,
+    endFrequency: 850,
+    duration: 0.12,
+    volume: 0.12,
+    type: "triangle",
+  });
+
+  makeTone(ctx, {
+    time: 0.06,
+    frequency: 850,
+    endFrequency: 1080,
+    duration: 0.12,
+    volume: 0.09,
+    type: "triangle",
+  });
+}
+
+function playSuspenseSound(enabled) {
+  if (!enabled) return;
+
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  unlockAudio();
+
+  makeTone(ctx, {
+    frequency: 210,
+    endFrequency: 430,
+    duration: 0.25,
+    volume: 0.065,
+    type: "triangle",
+  });
+
+  makeTone(ctx, {
+    time: 0.11,
+    frequency: 320,
+    endFrequency: 590,
+    duration: 0.22,
+    volume: 0.05,
+    type: "triangle",
+  });
+}
+
+function playDonSound(
+  enabled,
+  strong = false
+) {
+  if (!enabled) return;
+
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  unlockAudio();
+
+  makeTone(ctx, {
+    frequency: strong
+      ? 175
+      : 145,
+    endFrequency: 48,
+    duration: strong
+      ? 0.28
+      : 0.21,
+    volume: strong
+      ? 0.34
+      : 0.25,
+    type: "sine",
+  });
+
+  makeTone(ctx, {
+    frequency: strong
+      ? 95
+      : 110,
+    endFrequency: 42,
+    duration: 0.24,
+    volume: strong
+      ? 0.24
+      : 0.16,
+    type: "sine",
+  });
+
+  const notes = strong
+    ? [784, 988, 1175, 1568]
+    : [659, 831, 1047];
+
+  notes.forEach(
+    (frequency, index) => {
+      makeTone(ctx, {
+        time:
+          0.025 +
+          index * 0.04,
+        frequency,
+        endFrequency:
+          frequency * 1.02,
+        duration:
+          strong
+            ? 0.28
+            : 0.18,
+        volume:
+          strong
+            ? 0.08
+            : 0.055,
+        type: "triangle",
+      });
+    }
+  );
+}
+
+function playPerfectSound(enabled) {
+  if (!enabled) return;
+
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  unlockAudio();
+
+  [988, 1175, 1568, 2093].forEach(
+    (frequency, index) => {
+      makeTone(ctx, {
+        time: index * 0.055,
+        frequency,
+        endFrequency:
+          frequency * 1.03,
+        duration: 0.22,
+        volume: 0.065,
+        type: "triangle",
+      });
+    }
+  );
+}
+
+/* ================================
+   GAME
+================================ */
+
 export default function Game() {
   const router = useRouter();
 
@@ -134,10 +373,47 @@ export default function Game() {
     useState("");
 
   const [answerOrder, setAnswerOrder] =
-    useState([]);
+    useState([null, null, null]);
 
   const [submitting, setSubmitting] =
     useState(false);
+
+  const [soundEnabled, setSoundEnabled] =
+    useState(true);
+
+  useEffect(() => {
+    const savedSound =
+      localStorage.getItem(
+        "besutori-sound"
+      );
+
+    if (savedSound === "off") {
+      setSoundEnabled(false);
+    }
+
+    const unlock = () => {
+      if (
+        localStorage.getItem(
+          "besutori-sound"
+        ) !== "off"
+      ) {
+        unlockAudio();
+      }
+    };
+
+    window.addEventListener(
+      "pointerdown",
+      unlock,
+      { once: true }
+    );
+
+    return () => {
+      window.removeEventListener(
+        "pointerdown",
+        unlock
+      );
+    };
+  }, []);
 
   useEffect(() => {
     const saved =
@@ -256,38 +532,56 @@ export default function Game() {
         ]
       : null;
 
+  const options = useMemo(() => {
+    if (!game.options) {
+      return [];
+    }
+
+    return Array.isArray(
+      game.options
+    )
+      ? game.options
+      : Object.values(
+          game.options
+        );
+  }, [game.options]);
+
   useEffect(() => {
     if (
-      phase !== "answering" ||
-      !game.options
+      phase !== "answering"
     ) {
       return;
     }
 
-    const options =
-      Array.isArray(game.options)
-        ? game.options
-        : Object.values(
-            game.options
-          );
-
-    if (
-      options.length !== 3
-    ) {
-      return;
-    }
-
-    /*
-      Firebaseのoptionsは既に
-      出題時にシャッフル済み。
-      全員に同じ初期順を表示する。
-    */
-    setAnswerOrder(options);
+    setAnswerOrder([
+      null,
+      null,
+      null,
+    ]);
   }, [
     phase,
     game.round,
     game.options,
   ]);
+
+  function toggleSound() {
+    const next = !soundEnabled;
+
+    setSoundEnabled(next);
+
+    localStorage.setItem(
+      "besutori-sound",
+      next ? "on" : "off"
+    );
+
+    if (next) {
+      unlockAudio();
+
+      setTimeout(() => {
+        playThirdSound(true);
+      }, 20);
+    }
+  }
 
   function randomTopic() {
     let nextTopic =
@@ -370,7 +664,7 @@ export default function Game() {
     setSubmitting(true);
 
     try {
-      const options =
+      const nextOptions =
         shuffleArray(ranking);
 
       await update(
@@ -388,7 +682,7 @@ export default function Game() {
             third: ranking[2],
           },
 
-          options,
+          options: nextOptions,
 
           answers: null,
           revealed: false,
@@ -406,45 +700,16 @@ export default function Game() {
     }
   }
 
-  function moveAnswer(
-    index,
-    direction
-  ) {
-    if (myAnswer) {
-      return;
-    }
-
-    const nextIndex =
-      index + direction;
-
-    if (
-      nextIndex < 0 ||
-      nextIndex >=
-        answerOrder.length
-    ) {
-      return;
-    }
-
-    const next = [
-      ...answerOrder,
-    ];
-
-    [next[index], next[nextIndex]] =
-      [
-        next[nextIndex],
-        next[index],
-      ];
-
-    setAnswerOrder(next);
-  }
-
   async function submitAnswer() {
+    const completed =
+      answerOrder.every(Boolean);
+
     if (
       isPresenter ||
       isSpectator ||
       myAnswer ||
       submitting ||
-      answerOrder.length !== 3
+      !completed
     ) {
       return;
     }
@@ -491,6 +756,8 @@ export default function Game() {
     ) {
       return;
     }
+
+    unlockAudio();
 
     try {
       await update(
@@ -607,7 +874,12 @@ export default function Game() {
       setFirst("");
       setSecond("");
       setThird("");
-      setAnswerOrder([]);
+
+      setAnswerOrder([
+        null,
+        null,
+        null,
+      ]);
     } catch (error) {
       console.error(error);
 
@@ -709,17 +981,34 @@ export default function Game() {
             </strong>
           </div>
 
-          <button
-            type="button"
-            className="gameRoomCode"
-            onClick={() => {
-              navigator.clipboard?.writeText(
-                localRoom.roomCode
-              );
-            }}
-          >
-            {localRoom.roomCode}
-          </button>
+          <div className="gameHeaderActions">
+            <button
+              type="button"
+              className="soundToggleButton"
+              onClick={toggleSound}
+              aria-label={
+                soundEnabled
+                  ? "効果音をオフ"
+                  : "効果音をオン"
+              }
+            >
+              {soundEnabled
+                ? "🔊"
+                : "🔇"}
+            </button>
+
+            <button
+              type="button"
+              className="gameRoomCode"
+              onClick={() => {
+                navigator.clipboard?.writeText(
+                  localRoom.roomCode
+                );
+              }}
+            >
+              {localRoom.roomCode}
+            </button>
+          </div>
         </header>
 
         <div className="gameContent">
@@ -734,8 +1023,7 @@ export default function Game() {
             </strong>
           </div>
 
-          {phase ===
-            "setting" && (
+          {phase === "setting" && (
             <>
               {isPresenter ? (
                 <PresenterSetting
@@ -770,8 +1058,7 @@ export default function Game() {
             </>
           )}
 
-          {phase ===
-            "answering" && (
+          {phase === "answering" && (
             <>
               <div className="topicCard">
                 <span>
@@ -819,11 +1106,12 @@ export default function Game() {
                 />
               ) : (
                 <AnswerArea
+                  options={options}
                   answerOrder={
                     answerOrder
                   }
-                  moveAnswer={
-                    moveAnswer
+                  setAnswerOrder={
+                    setAnswerOrder
                   }
                   submitAnswer={
                     submitAnswer
@@ -836,9 +1124,8 @@ export default function Game() {
             </>
           )}
 
-          {phase ===
-            "result" && (
-            <ResultArea
+          {phase === "result" && (
+            <ResultReveal
               game={game}
               players={players}
               presenter={
@@ -854,23 +1141,42 @@ export default function Game() {
               nextRound={
                 nextRound
               }
+              soundEnabled={
+                soundEnabled
+              }
             />
           )}
 
-          {isHost && (
-            <button
-              type="button"
-              className="finishGameButton"
-              onClick={finishGame}
-            >
-              ゲームを終了
-            </button>
-          )}
+          {isHost &&
+            phase !== "result" && (
+              <button
+                type="button"
+                className="finishGameButton"
+                onClick={finishGame}
+              >
+                ゲームを終了
+              </button>
+            )}
+
+          {isHost &&
+            phase === "result" && (
+              <button
+                type="button"
+                className="finishGameButton"
+                onClick={finishGame}
+              >
+                ゲームを終了
+              </button>
+            )}
         </div>
       </section>
     </main>
   );
 }
+
+/* ================================
+   PRESENTER
+================================ */
 
 function PresenterSetting({
   topic,
@@ -924,9 +1230,7 @@ function PresenterSetting({
           </span>
 
           <div>
-            <label>
-              1位
-            </label>
+            <label>1位</label>
 
             <input
               value={first}
@@ -947,9 +1251,7 @@ function PresenterSetting({
           </span>
 
           <div>
-            <label>
-              2位
-            </label>
+            <label>2位</label>
 
             <input
               value={second}
@@ -970,9 +1272,7 @@ function PresenterSetting({
           </span>
 
           <div>
-            <label>
-              3位
-            </label>
+            <label>3位</label>
 
             <input
               value={third}
@@ -1002,6 +1302,426 @@ function PresenterSetting({
   );
 }
 
+/* ================================
+   DRAG ANSWER
+================================ */
+
+function AnswerArea({
+  options,
+  answerOrder,
+  setAnswerOrder,
+  submitAnswer,
+  submitting,
+}) {
+  const [dragging, setDragging] =
+    useState(null);
+
+  const [hoverRank, setHoverRank] =
+    useState(null);
+
+  const [selected, setSelected] =
+    useState(null);
+
+  const dragRef = useRef(null);
+
+  const used =
+    answerOrder.filter(Boolean);
+
+  const remaining =
+    options.filter(
+      (item) => !used.includes(item)
+    );
+
+  function placeItem(
+    item,
+    targetIndex
+  ) {
+    setAnswerOrder(
+      (current) => {
+        const next = [...current];
+
+        const oldIndex =
+          next.indexOf(item);
+
+        const targetItem =
+          next[targetIndex];
+
+        if (oldIndex >= 0) {
+          next[oldIndex] =
+            targetItem || null;
+        }
+
+        next[targetIndex] =
+          item;
+
+        return next;
+      }
+    );
+
+    setSelected(null);
+  }
+
+  function beginDrag(
+    event,
+    item
+  ) {
+    event.preventDefault();
+
+    unlockAudio();
+
+    const sourceIndex =
+      answerOrder.indexOf(item);
+
+    const rect =
+      event.currentTarget.getBoundingClientRect();
+
+    dragRef.current = {
+      item,
+      sourceIndex,
+      offsetX:
+        event.clientX -
+        rect.left,
+      offsetY:
+        event.clientY -
+        rect.top,
+    };
+
+    setDragging({
+      item,
+      x: event.clientX,
+      y: event.clientY,
+      width: rect.width,
+      height: rect.height,
+    });
+
+    event.currentTarget.setPointerCapture?.(
+      event.pointerId
+    );
+  }
+
+  function moveDrag(event) {
+    if (!dragRef.current) {
+      return;
+    }
+
+    event.preventDefault();
+
+    setDragging(
+      (current) =>
+        current
+          ? {
+              ...current,
+              x: event.clientX,
+              y: event.clientY,
+            }
+          : current
+    );
+
+    const element =
+      document.elementFromPoint(
+        event.clientX,
+        event.clientY
+      );
+
+    const slot =
+      element?.closest?.(
+        "[data-rank-slot]"
+      );
+
+    if (slot) {
+      setHoverRank(
+        Number(
+          slot.dataset.rankSlot
+        )
+      );
+    } else {
+      setHoverRank(null);
+    }
+  }
+
+  function endDrag(event) {
+    if (!dragRef.current) {
+      return;
+    }
+
+    const item =
+      dragRef.current.item;
+
+    const element =
+      document.elementFromPoint(
+        event.clientX,
+        event.clientY
+      );
+
+    const slot =
+      element?.closest?.(
+        "[data-rank-slot]"
+      );
+
+    if (slot) {
+      placeItem(
+        item,
+        Number(
+          slot.dataset.rankSlot
+        )
+      );
+    }
+
+    dragRef.current = null;
+
+    setDragging(null);
+    setHoverRank(null);
+  }
+
+  function chooseItem(item) {
+    setSelected(
+      selected === item
+        ? null
+        : item
+    );
+  }
+
+  function chooseSlot(index) {
+    if (!selected) {
+      return;
+    }
+
+    placeItem(
+      selected,
+      index
+    );
+  }
+
+  const completed =
+    answerOrder.every(Boolean);
+
+  return (
+    <div className="gamePanel dragAnswerPanel">
+      <div className="gameSectionTitle">
+        順位を予想しよう
+      </div>
+
+      <p className="gameHelp">
+        カードを指でつかんで
+        <br />
+        1位〜3位の枠へ持っていこう
+      </p>
+
+      <div className="answerChoiceArea">
+        <span className="answerChoiceLabel">
+          選択肢
+        </span>
+
+        <div className="answerChoiceList">
+          {remaining.length > 0 ? (
+            remaining.map(
+              (item) => (
+                <DraggableAnswerCard
+                  key={item}
+                  item={item}
+                  selected={
+                    selected === item
+                  }
+                  onPointerDown={
+                    beginDrag
+                  }
+                  onPointerMove={
+                    moveDrag
+                  }
+                  onPointerUp={
+                    endDrag
+                  }
+                  onPointerCancel={
+                    endDrag
+                  }
+                  onClick={() =>
+                    chooseItem(item)
+                  }
+                />
+              )
+            )
+          ) : (
+            <div className="allCardsPlaced">
+              全部セットできた！
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="rankDropArea">
+        {answerOrder.map(
+          (item, index) => (
+            <div
+              key={index}
+              data-rank-slot={index}
+              className={[
+                "rankDropSlot",
+                `rankDropSlot${index + 1}`,
+                hoverRank === index
+                  ? "dragOver"
+                  : "",
+                item
+                  ? "filled"
+                  : "",
+                selected
+                  ? "tapReady"
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              onClick={() =>
+                chooseSlot(index)
+              }
+            >
+              <div className="dropRankBadge">
+                <strong>
+                  {index + 1}
+                </strong>
+                <span>位</span>
+              </div>
+
+              {item ? (
+                <DraggableAnswerCard
+                  item={item}
+                  selected={
+                    selected === item
+                  }
+                  placed
+                  onPointerDown={
+                    beginDrag
+                  }
+                  onPointerMove={
+                    moveDrag
+                  }
+                  onPointerUp={
+                    endDrag
+                  }
+                  onPointerCancel={
+                    endDrag
+                  }
+                  onClick={(
+                    event
+                  ) => {
+                    event.stopPropagation();
+                    chooseItem(
+                      item
+                    );
+                  }}
+                />
+              ) : (
+                <div className="dropPlaceholder">
+                  <span>＋</span>
+                  ここに持ってくる
+                </div>
+              )}
+            </div>
+          )
+        )}
+      </div>
+
+      <p className="dragHint">
+        指で動かしにくい時は
+        「カード → 順位枠」の順に
+        タップしても入れられます
+      </p>
+
+      <button
+        type="button"
+        className="submitAnswerButton"
+        onClick={submitAnswer}
+        disabled={
+          submitting ||
+          !completed
+        }
+      >
+        {submitting
+          ? "回答中..."
+          : completed
+            ? "この順位で回答する"
+            : "1位〜3位を決めよう"}
+      </button>
+
+      {dragging && (
+        <div
+          className="floatingAnswerCard"
+          style={{
+            left: dragging.x,
+            top: dragging.y,
+          }}
+        >
+          <span className="dragGrip">
+            ⋮⋮
+          </span>
+
+          <strong>
+            {dragging.item}
+          </strong>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DraggableAnswerCard({
+  item,
+  selected,
+  placed = false,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel,
+  onClick,
+}) {
+  return (
+    <button
+      type="button"
+      className={[
+        "dragAnswerCard",
+        selected
+          ? "selected"
+          : "",
+        placed
+          ? "placed"
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      onPointerDown={(
+        event
+      ) =>
+        onPointerDown(
+          event,
+          item
+        )
+      }
+      onPointerMove={
+        onPointerMove
+      }
+      onPointerUp={onPointerUp}
+      onPointerCancel={
+        onPointerCancel
+      }
+      onClick={onClick}
+    >
+      <span className="dragGrip">
+        ⋮⋮
+      </span>
+
+      <strong>{item}</strong>
+
+      {!placed && (
+        <span className="dragMiniText">
+          つかむ
+        </span>
+      )}
+    </button>
+  );
+}
+
+/* ================================
+   WAITING
+================================ */
+
 function WaitingCard({
   title,
   text,
@@ -1015,97 +1735,7 @@ function WaitingCard({
       </div>
 
       <h2>{title}</h2>
-
       <p>{text}</p>
-    </div>
-  );
-}
-
-function AnswerArea({
-  answerOrder,
-  moveAnswer,
-  submitAnswer,
-  submitting,
-}) {
-  return (
-    <div className="gamePanel">
-      <div className="gameSectionTitle">
-        順位を予想しよう
-      </div>
-
-      <p className="gameHelp">
-        ▲ ▼ で並べ替えて、
-        出題者の1〜3位を当てよう
-      </p>
-
-      <div className="answerRanking">
-        {answerOrder.map(
-          (item, index) => (
-            <div
-              className="answerRankCard"
-              key={`${item}-${index}`}
-            >
-              <div className="answerRankNumber">
-                {index + 1}
-              </div>
-
-              <strong>
-                {item}
-              </strong>
-
-              <div className="answerMoveButtons">
-                <button
-                  type="button"
-                  onClick={() =>
-                    moveAnswer(
-                      index,
-                      -1
-                    )
-                  }
-                  disabled={
-                    index === 0
-                  }
-                  aria-label="上へ"
-                >
-                  ▲
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    moveAnswer(
-                      index,
-                      1
-                    )
-                  }
-                  disabled={
-                    index ===
-                    answerOrder.length -
-                      1
-                  }
-                  aria-label="下へ"
-                >
-                  ▼
-                </button>
-              </div>
-            </div>
-          )
-        )}
-      </div>
-
-      <button
-        type="button"
-        className="submitAnswerButton"
-        onClick={submitAnswer}
-        disabled={
-          submitting ||
-          answerOrder.length !== 3
-        }
-      >
-        {submitting
-          ? "回答中..."
-          : "この順位で回答する"}
-      </button>
     </div>
   );
 }
@@ -1233,6 +1863,305 @@ function AnsweredWaiting({
   );
 }
 
+/* ================================
+   RESULT REVEAL
+================================ */
+
+function ResultReveal({
+  game,
+  players,
+  presenter,
+  answers,
+  getCorrectCount,
+  isPresenter,
+  nextRound,
+  soundEnabled,
+}) {
+  const [stage, setStage] =
+    useState("intro");
+
+  const playedRef =
+    useRef(false);
+
+  const ranking = [
+    game.ranking?.first,
+    game.ranking?.second,
+    game.ranking?.third,
+  ];
+
+  useEffect(() => {
+    if (playedRef.current) {
+      return;
+    }
+
+    playedRef.current = true;
+
+    const timers = [];
+
+    timers.push(
+      setTimeout(() => {
+        setStage("third");
+        playThirdSound(
+          soundEnabled
+        );
+      }, 650)
+    );
+
+    timers.push(
+      setTimeout(() => {
+        setStage("suspense");
+        playSuspenseSound(
+          soundEnabled
+        );
+      }, 1900)
+    );
+
+    timers.push(
+      setTimeout(() => {
+        setStage("second");
+        playDonSound(
+          soundEnabled,
+          false
+        );
+      }, 2850)
+    );
+
+    timers.push(
+      setTimeout(() => {
+        setStage("firstWait");
+        playSuspenseSound(
+          soundEnabled
+        );
+      }, 3950)
+    );
+
+    timers.push(
+      setTimeout(() => {
+        setStage("first");
+        playDonSound(
+          soundEnabled,
+          true
+        );
+      }, 4750)
+    );
+
+    timers.push(
+      setTimeout(() => {
+        setStage("results");
+
+        const hasPerfect =
+          Object.values(
+            answers
+          ).some(
+            (answer) =>
+              getCorrectCount(
+                answer
+              ) === 3
+          );
+
+        if (hasPerfect) {
+          playPerfectSound(
+            soundEnabled
+          );
+        }
+      }, 6500)
+    );
+
+    return () => {
+      timers.forEach(
+        clearTimeout
+      );
+    };
+  }, []);
+
+  if (stage !== "results") {
+    return (
+      <RevealStage
+        stage={stage}
+        ranking={ranking}
+        topic={game.topic}
+      />
+    );
+  }
+
+  return (
+    <ResultArea
+      game={game}
+      players={players}
+      presenter={presenter}
+      answers={answers}
+      getCorrectCount={
+        getCorrectCount
+      }
+      isPresenter={
+        isPresenter
+      }
+      nextRound={nextRound}
+    />
+  );
+}
+
+function RevealStage({
+  stage,
+  ranking,
+  topic,
+}) {
+  const showThird = [
+    "third",
+    "suspense",
+    "second",
+    "firstWait",
+    "first",
+  ].includes(stage);
+
+  const showSecond = [
+    "second",
+    "firstWait",
+    "first",
+  ].includes(stage);
+
+  const showFirst =
+    stage === "first";
+
+  const isSuspense =
+    stage === "suspense" ||
+    stage === "firstWait";
+
+  return (
+    <div
+      className={[
+        "revealStage",
+        `revealStage-${stage}`,
+      ].join(" ")}
+    >
+      <div className="revealTopic">
+        {topic}
+      </div>
+
+      {stage === "intro" && (
+        <div className="revealIntro">
+          <span>
+            RESULT
+          </span>
+
+          <h2>
+            答え合わせ！
+          </h2>
+        </div>
+      )}
+
+      {isSuspense && (
+        <div className="suspenseText">
+          <span>
+            そして……
+          </span>
+        </div>
+      )}
+
+      <div className="revealRanking">
+        {showThird && (
+          <RevealCard
+            rank={3}
+            item={ranking[2]}
+            className="revealThird"
+          />
+        )}
+
+        {showSecond && (
+          <RevealCard
+            rank={2}
+            item={ranking[1]}
+            className="revealSecond"
+          />
+        )}
+
+        {showFirst && (
+          <RevealCard
+            rank={1}
+            item={ranking[0]}
+            className="revealFirst"
+          />
+        )}
+      </div>
+
+      {showFirst && (
+        <Confetti />
+      )}
+    </div>
+  );
+}
+
+function RevealCard({
+  rank,
+  item,
+  className,
+}) {
+  return (
+    <div
+      className={`revealRankCard ${className}`}
+    >
+      {rank === 1 && (
+        <div className="revealCrown">
+          ♛
+        </div>
+      )}
+
+      <div className="revealRankLabel">
+        第{rank}位
+      </div>
+
+      <strong>
+        {item}
+      </strong>
+
+      <span className="revealDon">
+        {rank === 1
+          ? "DON!!"
+          : rank === 2
+            ? "DON!"
+            : ""}
+      </span>
+    </div>
+  );
+}
+
+function Confetti() {
+  return (
+    <div
+      className="confetti"
+      aria-hidden="true"
+    >
+      {Array.from({
+        length: 26,
+      }).map((_, index) => (
+        <span
+          key={index}
+          style={{
+            "--i": index,
+            "--x": `${
+              4 +
+              ((index * 37) %
+                92)
+            }%`,
+            "--delay": `${
+              (index % 7) *
+              0.045
+            }s`,
+            "--rotate": `${
+              (index * 47) %
+              360
+            }deg`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ================================
+   FINAL RESULT
+================================ */
+
 function ResultArea({
   game,
   players,
@@ -1256,7 +2185,7 @@ function ResultArea({
     );
 
   return (
-    <>
+    <div className="finalResultAppear">
       <div className="resultTitle">
         <span>
           RESULT
@@ -1313,7 +2242,11 @@ function ResultArea({
 
               return (
                 <div
-                  className="resultPlayer"
+                  className={
+                    correctCount === 3
+                      ? "resultPlayer perfectPlayer"
+                      : "resultPlayer"
+                  }
                   key={player.id}
                 >
                   <div>
@@ -1371,6 +2304,6 @@ function ResultArea({
           進むのを待っています
         </div>
       )}
-    </>
+    </div>
   );
 }
