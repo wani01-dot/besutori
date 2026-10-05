@@ -3705,3 +3705,247 @@ a {
   box-shadow:
     0 3px 0 rgba(183, 123, 0, 0.14);
 }
+/* ================================
+   PLAYER ANSWER RESULT
+================================ */
+
+.resultPlayerDetail {
+  margin-bottom: 13px;
+  padding: 13px;
+
+  border: 1.5px solid #e2dfd8;
+  border-radius: 18px;
+
+  background: white;
+
+  box-shadow:
+    0 5px 15px rgba(23, 34, 53, 0.045);
+}
+
+.resultPlayerDetail.perfectPlayer {
+  border-color: #e6bc25;
+
+  background:
+    linear-gradient(
+      135deg,
+      #fffef7,
+      #fff9dc
+    );
+}
+
+.resultPlayerHeader {
+  min-height: 48px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.resultPlayerIdentity {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.resultPlayerIdentity > strong {
+  min-width: 0;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  color: #172235;
+
+  font-size: 15px;
+  font-weight: 1000;
+}
+
+.playerAnswerRanking {
+  display: grid;
+  gap: 7px;
+
+  margin-top: 12px;
+  padding-top: 12px;
+
+  border-top: 1px solid #ebe8e1;
+}
+
+.playerAnswerRow {
+  min-height: 51px;
+
+  padding: 7px 9px;
+
+  border: 1.5px solid;
+  border-radius: 13px;
+
+  display: grid;
+  grid-template-columns:
+    39px
+    minmax(0, 1fr)
+    34px;
+  align-items: center;
+  gap: 8px;
+}
+
+.playerAnswerRank {
+  width: 36px;
+  height: 36px;
+
+  border-radius: 10px;
+
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 1px;
+
+  background:
+    rgba(23, 34, 53, 0.88);
+  color: white;
+}
+
+.playerAnswerRank strong {
+  font-size: 17px;
+  font-weight: 1000;
+}
+
+.playerAnswerRank span {
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.playerAnswerItem {
+  min-width: 0;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  font-size: 13px;
+  font-weight: 1000;
+}
+
+.playerAnswerJudge {
+  width: 31px;
+  height: 31px;
+
+  border-radius: 50%;
+
+  display: grid;
+  place-items: center;
+
+  font-size: 19px;
+  font-weight: 1000;
+}
+
+.correctJudge {
+  background: #25b75d;
+  color: white;
+
+  box-shadow:
+    0 3px 0 rgba(0, 104, 48, 0.15);
+}
+
+.wrongJudge {
+  background: #f06f60;
+  color: white;
+
+  box-shadow:
+    0 3px 0 rgba(147, 44, 32, 0.13);
+}
+
+/*
+  回答時のカード固有色を
+  結果画面でもそのまま使用
+*/
+
+.playerAnswerColor1 {
+  border-color: #dfb100;
+
+  background:
+    linear-gradient(
+      135deg,
+      #fffdf1,
+      #fff4ad
+    );
+
+  color: #654700;
+}
+
+.playerAnswerColor2 {
+  border-color: #52aede;
+
+  background:
+    linear-gradient(
+      135deg,
+      #f5fcff,
+      #d6f1ff
+    );
+
+  color: #07547d;
+}
+
+.playerAnswerColor3 {
+  border-color: #dc7569;
+
+  background:
+    linear-gradient(
+      135deg,
+      #fff8f7,
+      #ffddd8
+    );
+
+  color: #713129;
+}
+
+/*
+  不正解でもカード固有色は消さない。
+  少しだけ薄くして×を目立たせる。
+*/
+
+.playerAnswerRow.answerWrong {
+  opacity: 0.82;
+}
+
+.playerAnswerRow.answerCorrect {
+  box-shadow:
+    inset 0 0 0 1px
+      rgba(37, 183, 93, 0.15);
+}
+
+.playerNoAnswer {
+  margin-top: 11px;
+  padding: 13px;
+
+  border: 1.5px dashed #d9d6cf;
+  border-radius: 12px;
+
+  background: #faf9f6;
+  color: #9298a0;
+
+  text-align: center;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+@media (max-width: 360px) {
+  .resultPlayerDetail {
+    padding: 11px;
+  }
+
+  .playerAnswerRow {
+    grid-template-columns:
+      36px
+      minmax(0, 1fr)
+      31px;
+
+    gap: 6px;
+  }
+
+  .playerAnswerItem {
+    font-size: 12px;
+  }
+}
